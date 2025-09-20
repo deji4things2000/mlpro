@@ -392,7 +392,7 @@ class CS1Canvas(QWidget):
 
     def draw_text(self, s, x, y):
 
-        self.ipainter.drawText(x, y, s)
+        self.ipainter.drawText(int(x), int(y), s)
 
 
     def get_text_width(self, str):
@@ -586,7 +586,7 @@ def get_text_height():
 # the frames parameters gives the number of frames to display on the
 #  browser version of cs1lib.  Ignored in qt version.
 def start_graphics(draw_func=noop, frames=1, data=None, framerate=40,
-                title="cs1", width=400, height=400,
+                title="CS1", width=400, height=400,
                 mouse_press=noop, mouse_release = noop, mouse_move=noop,
                 key_press=noop, key_release=noop):
 
@@ -666,7 +666,7 @@ if __name__ == '__main__':
         text = "Hello, world!"
         w = get_text_width(text)
 
-        draw_text("Hello, world!", 200 - w/2, 277)
+        draw_text("Welcome to AI!", 200 - w/2, 277)
 
         h = get_text_height()
         draw_text(str(mouse_x()), 10, 400)
