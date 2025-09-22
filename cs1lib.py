@@ -666,7 +666,7 @@ if __name__ == '__main__':
         text = "Hello, world!"
         w = get_text_width(text)
 
-        draw_text("Welcome to AI!", 200 - w/2, 277)
+        draw_text("Welcome to", 200 - w/2, 277)
 
         h = get_text_height()
         draw_text(str(mouse_x()), 10, 400)
