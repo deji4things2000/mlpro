@@ -5,7 +5,7 @@ from astar_search import astar_search
 
 def test_sensorless():
     # Test with maze3
-    test_maze3 = Maze("maze3.maz")
+    test_maze3 = Maze("/Users/user_1/mlpro/mazeworld/maze3.maz")
     test_problem = SensorlessProblem(test_maze3)
     
     print("Testing sensorless problem on maze3:")

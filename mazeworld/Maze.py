@@ -135,13 +135,13 @@ def robotchar(robot_number):
 # Some test code
 
 if __name__ == "__main__":
-    test_maze1 = Maze("maze1.maz")
+    test_maze1 = Maze("/Users/user_1/mlpro/mazeworld/maze1.maz")
     print(test_maze1)
 
     #test_maze2 = Maze("maze2.maz")
     #print(test_maze2)
 
-    test_maze3 = Maze("maze3.maz")
+    test_maze3 = Maze("/Users/user_1/mlpro/mazeworld/maze3.maz")
     print(test_maze3)
 
     print(test_maze3)
