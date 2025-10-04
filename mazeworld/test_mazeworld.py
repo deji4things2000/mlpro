@@ -10,7 +10,7 @@ def null_heuristic(state):
 
 # Test problems
 
-test_maze3 = Maze("maze3.maz")
+test_maze3 = Maze("/Users/user_1/mlpro/mazeworld/maze3.maz")
 test_mp = MazeworldProblem(test_maze3, (1, 4, 1, 3, 1, 2))
 
 print(test_mp.get_successors(test_mp.start_state))
@@ -31,7 +31,7 @@ print("="*50)
 
 # Test with maze1 (simpler maze)
 print("\n--- Testing with maze1 ---")
-test_maze1 = Maze("maze1.maz")
+test_maze1 = Maze("/Users/user_1/mlpro/mazeworld/maze1.maz")
 print("maze1 robot locations:", test_maze1.robotloc)
 
 # Create a simple goal for maze1 (just move robots slightly)
@@ -51,7 +51,7 @@ if len(test_maze1.robotloc) >= 2:  # At least one robot
 # Test with maze2
 print("\n--- Testing with maze2 ---")
 try:
-    test_maze2 = Maze("maze2.maz")
+    test_maze2 = Maze("/Users/user_1/mlpro/mazeworld/maze2.maz")
     print("maze2 robot locations:", test_maze2.robotloc)
     
     # Create a reasonable goal
@@ -65,6 +65,62 @@ try:
         print(result2)
 except Exception as e:
     print(f"Error testing maze2: {e}")
+
+# NEW CUSTOM MAZE TESTS (maze4 - maze8)
+print("\n--- Testing maze4: Corridor Order Reversal ---")
+try:
+    test_maze4 = Maze("/Users/user_1/mlpro/mazeworld/maze4.maz")
+    print("maze4 (Corridor):")
+    print(test_maze4)
+    test_mp4 = MazeworldProblem(test_maze4, (5, 1, 3, 1, 1, 1))
+    result4 = astar_search(test_mp4, test_mp4.manhattan_heuristic)
+    print(result4)
+except Exception as e:
+    print(f"Error testing maze4: {e}")
+
+print("\n--- Testing maze5: Bottleneck Passing ---")
+try:
+    test_maze5 = Maze("/Users/user_1/mlpro/mazeworld/maze5.maz")
+    print("maze5 (Bottleneck):")
+    print(test_maze5)
+    test_mp5 = MazeworldProblem(test_maze5, (5, 2, 1, 2))
+    result5 = astar_search(test_mp5, test_mp5.manhattan_heuristic)
+    print(result5)
+except Exception as e:
+    print(f"Error testing maze5: {e}")
+
+print("\n--- Testing maze6: Dead End Coordination ---")
+try:
+    test_maze6 = Maze("/Users/user_1/mlpro/mazeworld/maze6.maz")
+    print("maze6 (Dead Ends):")
+    print(test_maze6)
+    test_mp6 = MazeworldProblem(test_maze6, (5, 1, 1, 1))
+    result6 = astar_search(test_mp6, test_mp6.manhattan_heuristic)
+    print(result6)
+except Exception as e:
+    print(f"Error testing maze6: {e}")
+
+print("\n--- Testing maze7: Crossroads Challenge ---")
+try:
+    test_maze7 = Maze("/Users/user_1/mlpro/mazeworld/maze7.maz")
+    print("maze7 (Crossroads):")
+    print(test_maze7)
+    test_mp7 = MazeworldProblem(test_maze7, (5, 1, 1, 1, 3, 5))
+    result7 = astar_search(test_mp7, test_mp7.manhattan_heuristic)
+    print(result7)
+except Exception as e:
+    print(f"Error testing maze7: {e}")
+
+print("\n--- Testing maze8: Spiral Maze ---")
+try:
+    test_maze8 = Maze("/Users/user_1/mlpro/mazeworld/maze8.maz")
+    print("maze8 (Spiral):")
+    print(test_maze8)
+    test_mp8 = MazeworldProblem(test_maze8, (5, 1, 1, 5, 3, 1))
+    result8 = astar_search(test_mp8, test_mp8.manhattan_heuristic)
+    print(result8)
+except Exception as e:
+    print(f"Error testing maze8: {e}")
 
 # Edge case tests
 print("\n--- Edge Case Tests ---")

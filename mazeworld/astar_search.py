@@ -44,26 +44,34 @@ def astar_search(search_problem, heuristic_fn):
 
     solution = SearchSolution(search_problem, "Astar with heuristic " + heuristic_fn.__name__)
 
-    visited_cost = {}
-    visited_cost[start_node.state] = 0
+    # Dictionary to track best known cost to reach each state
+    best_cost = {}
+    best_cost[start_node.state] = 0
 
-    # you write the rest:
     while pqueue:
         current_node = heappop(pqueue)
+        current_state = current_node.state
+        
+        # Lazy deletion: if we've found a better path to this state since this node was added, skip it
+        if current_node.transition_cost > best_cost.get(current_state, float('inf')):
+            continue
+            
         solution.nodes_visited += 1
 
-        if search_problem.is_goal_state(current_node.state):
+        if search_problem.goal_test(current_state):
             solution.path = backchain(current_node)
             solution.cost = current_node.transition_cost
             return solution
 
-        for child_state, cost, action in search_problem.get_successors(current_node.state):
+        for child_state, cost, action in search_problem.get_successors(current_state):
             new_cost = current_node.transition_cost + cost
-            heuristic_val = heuristic_fn(child_state)
             
-            if child_state not in visited_cost or new_cost < visited_cost[child_state]:
-                visited_cost[child_state] = new_cost
+            # Only consider this child if it's better than any path we've found before
+            if child_state not in best_cost or new_cost < best_cost[child_state]:
+                best_cost[child_state] = new_cost
+                heuristic_val = heuristic_fn(child_state)
                 child_node = AstarNode(child_state, heuristic_val, current_node, new_cost)
                 heappush(pqueue, child_node)
 
     return solution
+
