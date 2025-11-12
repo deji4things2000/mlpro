@@ -99,30 +99,43 @@ class TournamentChessGui:
         svgbytes.append(svgboard)
         self.svgWidget.load(svgbytes)
         self.update_time_display()
-
+    
     def get_game_result_description(self, result):
-        """Enhanced result description with timeout detection"""
+        """Enhanced result description with timeout and time tiebreak detection"""
         if self.game.is_timeout():
             if self.game.time_used[0] >= self.time_limit:
-                return "Black wins on time!"
+                black_time = self.game.get_time_remaining(chess.BLACK)
+                return f"Black wins on time! ({black_time:.1f}s remaining)"
             else:
-                return "White wins on time!"
-                
-        if result == "1-0":
-            return "White wins by checkmate!"
-        elif result == "0-1":
-            return "Black wins by checkmate!"
-        elif result == "1/2-1/2":
-            if self.game.board.is_stalemate():
-                return "Game drawn by stalemate!"
-            elif self.game.board.is_insufficient_material():
-                return "Game drawn by insufficient material!"
-            elif self.game.board.is_seventyfive_moves():
-                return "Game drawn by 75-move rule!"
+                white_time = self.game.get_time_remaining(chess.WHITE)
+                return f"White wins on time! ({white_time:.1f}s remaining)"
+        
+        # Use the new time-based result system
+        actual_result = self.game.get_game_result_with_time_tiebreak()
+        
+        if actual_result == "1-0":
+            white_time = self.game.get_time_remaining(chess.WHITE)
+            black_time = self.game.get_time_remaining(chess.BLACK)
+            if self.game.board.is_checkmate():
+                return f"White wins by checkmate! (Time: {white_time:.1f}s vs {black_time:.1f}s)"
             else:
-                return "Game drawn!"
+                return f"White wins on time tiebreak! ({white_time:.1f}s remaining vs {black_time:.1f}s)"
+        elif actual_result == "0-1":
+            white_time = self.game.get_time_remaining(chess.WHITE)
+            black_time = self.game.get_time_remaining(chess.BLACK)
+            if self.game.board.is_checkmate():
+                return f"Black wins by checkmate! (Time: {black_time:.1f}s vs {white_time:.1f}s)"
+            else:
+                return f"Black wins on time tiebreak! ({black_time:.1f}s remaining vs {white_time:.1f}s)"
         else:
-            return f"Game finished: {result}"
+            if self.game.board.is_stalemate():
+                return "Game drawn by stalemate (equal time)"
+            elif self.game.board.is_insufficient_material():
+                return "Game drawn by insufficient material (equal time)"
+            elif self.game.board.is_seventyfive_moves():
+                return "Game drawn by 75-move rule (equal time)"
+            else:
+                return "Game drawn (equal time remaining)"
 
     def make_move(self):
         if self.game_over:
@@ -130,12 +143,14 @@ class TournamentChessGui:
             
         if self.game.is_game_over():
             self.game_over = True
-            result = self.game.board.result()
-            result_description = self.get_game_result_description(result)
+            result_description = self.game.get_winner_description()
             
-            # Add time usage info
-            time_info = (f"\nTime usage - White: {self.game.time_used[0]:.1f}s, "
-                        f"Black: {self.game.time_used[1]:.1f}s")
+            # Add detailed time usage info
+            time_info = (f"\n\nTime Usage:\n"
+                        f"White: {self.game.time_used[0]:.1f}s used, "
+                        f"{self.game.get_time_remaining(chess.WHITE):.1f}s remaining\n"
+                        f"Black: {self.game.time_used[1]:.1f}s used, "
+                        f"{self.game.get_time_remaining(chess.BLACK):.1f}s remaining")
             
             QMessageBox.information(self.window, "Game Over", result_description + time_info)
             self.timer.stop()
@@ -145,20 +160,22 @@ class TournamentChessGui:
         self.game.make_move()
         self.display_board()
         
-        # Update info
         move_count = self.game.board.fullmove_number
         self.info_label.setText(f"Move {move_count} - Cores: {multiprocessing.cpu_count()}")
 
         if self.game.is_game_over():
             self.game_over = True
-            result = self.game.board.result()
-            result_description = self.get_game_result_description(result)
+            result_description = self.game.get_winner_description()
             
-            time_info = (f"\nTime usage - White: {self.game.time_used[0]:.1f}s, "
-                        f"Black: {self.game.time_used[1]:.1f}s")
+            time_info = (f"\n\nTime Usage:\n"
+                        f"White: {self.game.time_used[0]:.1f}s used, "
+                        f"{self.game.get_time_remaining(chess.WHITE):.1f}s remaining\n"
+                        f"Black: {self.game.time_used[1]:.1f}s used, "
+                        f"{self.game.get_time_remaining(chess.BLACK):.1f}s remaining")
             
             QMessageBox.information(self.window, "Game Over", result_description + time_info)
             self.timer.stop()
+
 
 if __name__ == "__main__":
     print("=== Tournament Chess AI ===")
