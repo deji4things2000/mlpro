@@ -1,0 +1,67 @@
+N = 1000  # number of DOF
+
+header = '''<?xml version="1.0"?>
+<robot name="hyper_robot">
+  <material name="blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+  <material name="red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="grey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+  <material name="dark_grey">
+    <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <link name="world"/>
+  <link name="base_link">
+    <visual><geometry><cylinder length="0.05" radius="0.12"/></geometry><material name="dark_grey"/></visual>
+    <collision><geometry><cylinder length="0.05" radius="0.12"/></geometry></collision>
+    <inertial><mass value="4.0"/><origin rpy="0 0 0" xyz="0.0 0.0 0.0"/><inertia ixx="0.00443333156" ixy="0.0" ixz="0.0" iyy="0.00443333156" iyz="0.0" izz="0.0072"/></inertial>
+  </link>
+  <joint name="world_joint" type="fixed">
+    <parent link="world"/><child link="base_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+  </joint>
+'''
+# Use template strings from the first joint and link definitions of your 6-DOF for all serial DOF.
+link_template = '''
+  <link name="link{idx}">
+    <visual><geometry><cylinder length="0.18" radius="0.06"/></geometry><material name="blue"/></visual>
+    <collision><geometry><cylinder length="0.18" radius="0.06"/></geometry></collision>
+    <inertial><mass value="3.7"/><origin rpy="0 0 0" xyz="0.0 0.0 0.0"/><inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/></inertial>
+  </link>
+'''
+
+joint_template = '''
+  <joint name="joint{idx}" type="revolute">
+    <parent link="link{parent}"/><child link="link{idx}"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159" upper="3.14159" effort="150" velocity="3.15"/>
+  </joint>
+'''
+
+body = ""
+for i in range(1, N+1):
+    body += link_template.format(idx=i)
+    parent = "base_link" if i == 1 else f"link{i-1}"
+    body += joint_template.format(idx=i, parent=parent)
+
+ee = '''
+  <link name="ee_link">
+    <visual><geometry><box size="0.04 0.04 0.04"/></geometry><material name="grey"/></visual>
+    <collision><geometry><box size="0.04 0.04 0.04"/></geometry></collision>
+    <inertial><mass value="0.1"/><origin rpy="0 0 0" xyz="0.0 0.0 0.0"/><inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/></inertial>
+  </link>
+  <joint name="ee_joint" type="fixed">
+    <origin rpy="-1.570796325 0 0" xyz="0 0.0823 0"/>
+    <parent link="link1000"/>
+    <child link="ee_link"/>
+  </joint>
+</robot>
+'''
+
+with open("1000dof_robot.urdf", "w") as f:
+    f.write(header + body + ee)
