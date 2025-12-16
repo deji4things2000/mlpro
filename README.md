@@ -71,4 +71,4 @@ pytest -q
 
 ## License
 
-Specify a license for the repository (e.g., MIT). Individual subprojects may have their own licenses.
+MIT. Individual subprojects may have their own licenses.
