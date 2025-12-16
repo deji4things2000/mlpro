@@ -1,16 +1,74 @@
-# ML Projects Hub
+# MLPRO
 
-Welcome! This repository contains a collection of my Machine Learning, AI, and Robotics projects.  
+A collection of AI/ML and optimization projects, algorithms, and experiments. This repo includes metaheuristics, robotics dynamics, search/constraint solvers, and educational assignments.
 
-Each project has its **own folder** with a dedicated README explaining the project, implementation details, results, and how to run it.  
+## Project Index
 
+- HALA/
+  - Hybrid Approximate Linear Algebra for robot dynamics with Pinocchio. Benchmarks Gauss-Jordan, Neumann, SPAI, and the HALA hybrid.
+  - See HALA/README.md.
 
-## How to Use
+- foxes_and_chicken_search_algorithm/
+  - Predator–prey metaheuristic (FCSA). Foxes exploit, chickens explore. Continuous optimization with pluggable objectives.
+  - See foxes_and_chicken_search_algorithm/README.md.
 
-1. Navigate to a project folder.
-2. Open the README.md inside for project details.
-3. Follow instructions to run the code or explore the notebooks.
+- mazeworld/
+  - Grid/maze search experiments (e.g., BFS/DFS/A*, heuristics). Likely includes agents and path planning.
 
----
+- CSP/
+  - Constraint Satisfaction Problems: backtracking, arc consistency, heuristics (MRV, degree, LCV), and problem examples.
 
-*You can explore the code, results, and documentation in each individual folder.*
+- chess/
+  - Chess engine utilities or algorithms (move generation, evaluation, search). May include unit tests and experiments.
+
+- chess_tournament/
+  - Tournament scheduling or simulation for chess (pairings, scoring, standings). Useful for combinatorial optimization demos.
+
+- Logic_PA5/
+  - Logic programming/assignment 5 resources (parsers, evaluators, or proofs). Educational or course-related.
+
+- Others/
+  - Misc experiments and utilities.
+  - optimizing_mat_mul_and_cuda/: matrix multiplication optimization and CUDA notes/code.
+  - .vscode/: workspace settings.
+
+## Getting Started (macOS)
+
+```bash
+# Clone and enter (if not already)
+git clone <your-repo-url> mlpro
+cd mlpro
+
+# Python environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install common deps (adjust per project)
+pip install numpy scipy jupyter
+
+# Optional: open in VS Code
+open -a "Visual Studio Code" .
+```
+
+## Running
+
+- HALA: open HALA/pinocchio.ipynb and run cells; see HALA/README.md.
+- FCSA: see foxes_and_chicken_search_algorithm/README.md; run examples or tests.
+- CSP/Mazeworld/Chess: open modules or notebooks in each folder and run via Python or Jupyter.
+
+## Tests
+
+```bash
+# If projects use pytest:
+pytest -q
+```
+
+## Contributing
+
+- Keep each project self-contained with its own README and requirements.txt.
+- Use consistent code style, small functions, and unit tests.
+- Add brief benchmarks for algorithmic projects.
+
+## License
+
+Specify a license for the repository (e.g., MIT). Individual subprojects may have their own licenses.
