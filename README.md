@@ -32,6 +32,10 @@ A collection of AI/ML and optimization projects, algorithms, and experiments. Th
   - optimizing_mat_mul_and_cuda/: matrix multiplication optimization and CUDA notes/code.
   - .vscode/: workspace settings.
 
+- farm_livestock_portal/
+  - Desktop portal for farm livestock tracking (Tkinter + MySQL) with barcode/QR workflows and AI-assisted health inference.
+  - See [farm_livestock_portal/README.md](farm_livestock_portal/README.md).
+
 ## Getting Started (macOS)
 
 ```bash
@@ -55,6 +59,36 @@ open -a "Visual Studio Code" .
 - HALA: open HALA/pinocchio.ipynb and run cells; see HALA/README.md.
 - FCSA: see foxes_and_chicken_search_algorithm/README.md; run examples or tests.
 - CSP/Mazeworld/Chess: open modules or notebooks in each folder and run via Python or Jupyter.
+
+### Farm Livestock Portal
+
+- Overview: GUI to register livestock, generate and preview barcodes/QR codes, manage health records, and auto-update `health_status` based on health entries. Species/breeds are sourced from FAO CSV.
+- Quick setup (uses its own requirements):
+
+```bash
+cd farm_livestock_portal
+pip install -r requirements.txt
+```
+
+- Run the app (from the portal folder):
+
+```bash
+python -m gui.main_app
+```
+
+- Seed dummy data (N animals + one “sick bison” health record):
+
+```bash
+python -m scripts.seed --animals 100
+```
+
+- Optional ML model for health inference (fallback heuristic used if not present):
+
+```bash
+python -c "from services.health_ml import train_health_model; train_health_model()"
+```
+
+The trained model is saved to [farm_livestock_portal/models/health_model.pkl](farm_livestock_portal/models/health_model.pkl) and is picked up automatically when available.
 
 ## Tests
 
