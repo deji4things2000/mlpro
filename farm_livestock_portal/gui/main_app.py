@@ -1,12 +1,24 @@
 # gui/main_app.py
 
+import os
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+# Ensure project root is on sys.path when running as a script
+try:
+    _ROOT = os.path.dirname(os.path.dirname(__file__))
+    if _ROOT not in sys.path:
+        sys.path.insert(0, _ROOT)
+except Exception:
+    pass
+
 from services.db_service import fetch_all_livestock, delete_livestock_by_id
 from gui.livestock_form import open_livestock_form, open_edit_livestock_form, generate_barcode, generate_qr
 from gui.health_records import open_health_records
 import os
 from PIL import Image, ImageTk
+from gui.styles import apply_base_styles
 
 BARCODE_DIR = "assets/barcodes/"
 
@@ -22,15 +34,9 @@ class FarmApp:
         self.root.resizable(True, True)
 
         # Improve base styles
-        style = ttk.Style()
-        try:
-            style.theme_use('clam')
-        except Exception:
-            pass
-        style.configure("Treeview", rowheight=26, font=("Helvetica", 11))
-        style.configure("Treeview.Heading", font=("Helvetica", 12, "bold"))
+        apply_base_styles(root)
 
-        header = ttk.Label(root, text="Farm Livestock Portal", font=("Helvetica", 18, "bold"))
+        header = ttk.Label(root, text="Farm Livestock Portal", style="Header.TLabel")
         header.pack(pady=(10, 5))
 
         # Search / filter bar
@@ -46,7 +52,7 @@ class FarmApp:
         ttk.Button(search_frame, text="Apply", command=self.apply_filter).pack(side="left", padx=6)
         ttk.Button(search_frame, text="Clear", command=self.clear_filter).pack(side="left")
 
-        self.tree = ttk.Treeview(root, columns=("ID", "Tag", "Type", "Breed", "Age", "Health", "Date"), show="headings", selectmode="extended")
+        self.tree = ttk.Treeview(root, columns=("ID", "Tag", "Type", "Breed", "Age", "DOB", "Health", "Purchase"), show="headings", selectmode="extended")
         self.sort_reverse = {}
         for col in self.tree['columns']:
             self.tree.heading(col, text=col, command=lambda c=col: self.sort_by(c))
@@ -65,28 +71,28 @@ class FarmApp:
         button_frame = ttk.Frame(root)
         button_frame.pack(pady=5)
 
-        add_button = ttk.Button(button_frame, text="Add Livestock", command=self.open_form)
+        add_button = ttk.Button(button_frame, text="Add Livestock", command=self.open_form, style="Primary.TButton")
         add_button.pack(side="left", padx=5)
 
-        barcode_button = ttk.Button(button_frame, text="Generate Barcodes for Selected", command=self.generate_barcode_selected)
+        barcode_button = ttk.Button(button_frame, text="Generate Barcodes for Selected", command=self.generate_barcode_selected, style="Secondary.TButton")
         barcode_button.pack(side="left", padx=5)
 
-        qr_button = ttk.Button(button_frame, text="Generate QR Codes for Selected", command=self.generate_qr_selected)
+        qr_button = ttk.Button(button_frame, text="Generate QR Codes for Selected", command=self.generate_qr_selected, style="Secondary.TButton")
         qr_button.pack(side="left", padx=5)
 
-        preview_button = ttk.Button(button_frame, text="Preview Barcode", command=self.preview_selected_barcode)
+        preview_button = ttk.Button(button_frame, text="Preview Barcode", command=self.preview_selected_barcode, style="Secondary.TButton")
         preview_button.pack(side="left", padx=5)
 
-        preview_qr_button = ttk.Button(button_frame, text="Preview QR", command=self.preview_selected_qr)
+        preview_qr_button = ttk.Button(button_frame, text="Preview QR", command=self.preview_selected_qr, style="Secondary.TButton")
         preview_qr_button.pack(side="left", padx=5)
 
-        health_button = ttk.Button(button_frame, text="Health Records", command=lambda: open_health_records(self.root, self.refresh_table))
+        health_button = ttk.Button(button_frame, text="Health Records", command=lambda: open_health_records(self.root, self.refresh_table), style="Secondary.TButton")
         health_button.pack(side="left", padx=5)
 
-        delete_button = ttk.Button(button_frame, text="Delete Selected", command=self.delete_selected)
+        delete_button = ttk.Button(button_frame, text="Delete Selected", command=self.delete_selected, style="Danger.TButton")
         delete_button.pack(side="left", padx=5)
 
-        edit_button = ttk.Button(button_frame, text="Edit Selected", command=self.edit_selected)
+        edit_button = ttk.Button(button_frame, text="Edit Selected", command=self.edit_selected, style="Secondary.TButton")
         edit_button.pack(side="left", padx=5)
 
         # Status bar
@@ -109,7 +115,7 @@ class FarmApp:
     def apply_filter(self):
         query = (self.search_var.get() or "").strip().lower()
         field = self.search_field_var.get()
-        index_map = {"Tag": 1, "Type": 2, "Breed": 3, "Health": 5}
+        index_map = {"Tag": 1, "Type": 2, "Breed": 3, "Health": 6}
         idx = index_map.get(field, 1)
         if not query:
             self.refresh_table()
@@ -128,7 +134,7 @@ class FarmApp:
 
     def sort_by(self, col):
         # Determine column index
-        cols = ["ID", "Tag", "Type", "Breed", "Age", "Health", "Date"]
+        cols = ["ID", "Tag", "Type", "Breed", "Age", "DOB", "Health", "Purchase"]
         idx = cols.index(col)
         items = [(self.tree.item(c, 'values')[idx], c) for c in self.tree.get_children('')]
         reverse = not self.sort_reverse.get(col, False)

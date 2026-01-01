@@ -68,7 +68,9 @@ def seed_animals(n: int, mapping: dict):
         species = random.choice(species_list)
         breed = random.choice(mapping.get(species, ["Mixed"]))
         tag = rand_tag(species)
-        age = random.randint(1, 12)
+        age_years = random.randint(1, 12)
+        # Approximate DOB based on age_years, with random offset within the year
+        dob = date.today() - timedelta(days=age_years * 365 + random.randint(0, 364))
         health = random.choice(HEALTH_STATUSES)
         purchase = rand_date(1800)
         livestock_type = random.choice(TYPES)
@@ -77,7 +79,7 @@ def seed_animals(n: int, mapping: dict):
             tag,
             species,
             breed,
-            age,
+            dob,
             health,
             purchase,
             livestock_type,
@@ -130,7 +132,9 @@ def main():
         species = "Bison"
         breed = random.choice(mapping.get(species, ["Plains"]))
         tag = rand_tag(species)
-        insert_livestock_extended((tag, species, breed, 6, "Healthy", rand_date(900), "Beef", random.choice(COLORS)))
+        bison_age_years = 6
+        bison_dob = date.today() - timedelta(days=bison_age_years * 365 + random.randint(0, 364))
+        insert_livestock_extended((tag, species, breed, bison_dob, "Healthy", rand_date(900), "Beef", random.choice(COLORS)))
         bison = (tag, species, breed)
     # Add a sick health record to validate auto-update
     seed_health_for_animal(bison[0], bison[1], "Pneumonia", severity="Severe")

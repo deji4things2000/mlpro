@@ -49,6 +49,8 @@ def ensure_columns():
             alters.append("ADD COLUMN livestock_type VARCHAR(64) NULL")
         if 'color' not in columns:
             alters.append("ADD COLUMN color VARCHAR(64) NULL")
+        if 'date_of_birth' not in columns:
+            alters.append("ADD COLUMN date_of_birth DATE NULL")
         if alters:
             cursor.execute(f"ALTER TABLE livestock {', '.join(alters)}")
             conn.commit()
@@ -101,7 +103,7 @@ def insert_livestock(data):
         conn.close()
 
 def insert_livestock_extended(data):
-    """Insert livestock including optional type/color. Ensures columns exist."""
+    """Insert livestock including optional type/color and date_of_birth. Ensures columns exist."""
     try:
         ensure_columns()
         conn = get_connection()
@@ -109,8 +111,8 @@ def insert_livestock_extended(data):
         # Try extended insert first
         query_ext = """
             INSERT INTO livestock 
-            (animal_tag, animal_type, breed, age, health_status, purchase_date, livestock_type, color)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            (animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         try:
             cursor.execute(query_ext, data)
@@ -121,7 +123,9 @@ def insert_livestock_extended(data):
                 (animal_tag, animal_type, breed, age, health_status, purchase_date)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(query_basic, data[:6])
+            # Map to basic fields: skip date_of_birth and optional type/color
+            basic = (data[0], data[1], data[2], data[3], data[5], data[6])
+            cursor.execute(query_basic, basic)
         conn.commit()
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err}")
@@ -133,12 +137,18 @@ def insert_livestock_extended(data):
             pass
 
 def fetch_all_livestock():
-    """Fetch all livestock records"""
+    """Fetch all livestock records with explicit column order including date_of_birth."""
     try:
-        ensure_livestock_table()
+        ensure_columns()
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM livestock")
+        cursor.execute(
+            """
+            SELECT id, animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date
+            FROM livestock
+            ORDER BY id ASC
+            """
+        )
         rows = cursor.fetchall()
         return rows
     except mysql.connector.Error as err:
@@ -175,7 +185,7 @@ def get_livestock_by_id(livestock_id):
         try:
             cursor.execute(
                 """
-                SELECT id, animal_tag, animal_type, breed, age, health_status, purchase_date, livestock_type, color
+                SELECT id, animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color
                 FROM livestock WHERE id = %s
                 """,
                 (livestock_id,),
@@ -192,7 +202,7 @@ def get_livestock_by_id(livestock_id):
             row = cursor.fetchone()
             if row is not None:
                 # Pad missing optional fields with None
-                return row + (None, None)
+                return row + (None, None, None)
         return None
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err}")
@@ -205,8 +215,8 @@ def get_livestock_by_id(livestock_id):
             pass
 
 def update_livestock_extended(data_with_id):
-    """Update livestock record by ID, including optional type/color when available.
-    data_with_id: (animal_tag, animal_type, breed, age, health_status, purchase_date, livestock_type, color, id)
+    """Update livestock record by ID, including optional type/color and date_of_birth when available.
+    data_with_id: (animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color, id)
     """
     try:
         ensure_columns()
@@ -220,6 +230,7 @@ def update_livestock_extended(data_with_id):
                     animal_type = %s,
                     breed = %s,
                     age = %s,
+                    date_of_birth = %s,
                     health_status = %s,
                     purchase_date = %s,
                     livestock_type = %s,
@@ -241,8 +252,29 @@ def update_livestock_extended(data_with_id):
                     purchase_date = %s
                 WHERE id = %s
                 """,
-                data_with_id[:6] + (data_with_id[-1],),
+                (data_with_id[0], data_with_id[1], data_with_id[2], data_with_id[3], data_with_id[5], data_with_id[6], data_with_id[-1]),
             )
+        conn.commit()
+    except mysql.connector.Error as err:
+        print(f"MySQL Error: {err}")
+        raise
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
+def update_date_of_birth_by_id(livestock_id, dob):
+    """Update only the date_of_birth field for a livestock record."""
+    try:
+        ensure_columns()
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE livestock SET date_of_birth = %s WHERE id = %s",
+            (dob, livestock_id),
+        )
         conn.commit()
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err}")
