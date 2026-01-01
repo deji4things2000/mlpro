@@ -3,6 +3,7 @@
 import os
 import binascii
 import hashlib
+import bcrypt
 import random
 import smtplib
 from email.message import EmailMessage
@@ -27,6 +28,7 @@ def ensure_users_table():
                 email VARCHAR(128) NOT NULL UNIQUE,
                 phone VARCHAR(32) NULL,
                 password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(32) NOT NULL DEFAULT 'user',
                 is_verified TINYINT(1) NOT NULL DEFAULT 0,
                 verification_code VARCHAR(16) NULL,
                 verification_expires DATETIME NULL,
@@ -60,6 +62,8 @@ def ensure_user_columns():
             alters.append("ADD COLUMN verification_code VARCHAR(16) NULL")
         if 'verification_expires' not in columns:
             alters.append("ADD COLUMN verification_expires DATETIME NULL")
+        if 'role' not in columns:
+            alters.append("ADD COLUMN role VARCHAR(32) NOT NULL DEFAULT 'user'")
         if alters:
             cursor.execute(f"ALTER TABLE users {', '.join(alters)}")
             conn.commit()
@@ -74,18 +78,13 @@ def ensure_user_columns():
 
 
 def _hash_password(password: str, salt: bytes | None = None) -> str:
-    if salt is None:
-        salt = os.urandom(16)
-    salted = salt + password.encode("utf-8")
-    digest = hashlib.sha256(salted).hexdigest()
-    return f"{binascii.hexlify(salt).decode()}${digest}"
+    # Use bcrypt for secure hashing with built-in salt
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def _verify_password(stored: str, password: str) -> bool:
     try:
-        salt_hex, digest = stored.split("$")
-        salt = binascii.unhexlify(salt_hex)
-        return _hash_password(password, salt).split("$")[1] == digest
+        return bcrypt.checkpw(password.encode("utf-8"), stored.encode("utf-8"))
     except Exception:
         return False
 
@@ -120,19 +119,42 @@ def verify_user(identifier: str, password: str):
         cursor = conn.cursor()
         # Lookup by username or email
         cursor.execute(
-            "SELECT id, username, email, phone, password_hash, is_verified FROM users WHERE username = %s OR email = %s",
+            "SELECT id, username, email, phone, password_hash, role, is_verified FROM users WHERE username = %s OR email = %s",
             (identifier, identifier),
         )
         row = cursor.fetchone()
         if not row:
             return None
-        uid, username, email, phone, stored, is_verified = row
+        uid, username, email, phone, stored, role, is_verified = row
         if _verify_password(stored, password):
-            return {"id": uid, "username": username, "email": email, "phone": phone, "is_verified": bool(is_verified)}
+            return {"id": uid, "username": username, "email": email, "phone": phone, "role": role, "is_verified": bool(is_verified)}
         return None
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err}")
         return None
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
+def ensure_default_admin():
+    """Create a default admin user if missing."""
+    ensure_user_columns()
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE username=%s", ("admin",))
+        exists = cursor.fetchone()
+        if not exists:
+            # Default password: admin123
+            ph = _hash_password("admin123")
+            cursor.execute(
+                "INSERT INTO users (username, email, password_hash, role, is_verified) VALUES (%s, %s, %s, %s, %s)",
+                ("admin", "admin@example.com", ph, "admin", 1),
+            )
+            conn.commit()
     finally:
         try:
             cursor.close()
