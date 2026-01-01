@@ -96,3 +96,20 @@ def fetch_all_livestock():
     finally:
         cursor.close()
         conn.close()
+
+def delete_livestock_by_id(livestock_id):
+    """Delete a livestock record by its ID"""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM livestock WHERE id = %s", (livestock_id,))
+        conn.commit()
+    except mysql.connector.Error as err:
+        print(f"MySQL Error: {err}")
+        raise
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
