@@ -12,6 +12,7 @@ import barcode
 from barcode.writer import ImageWriter
 import qrcode
 import urllib.parse
+from PIL import Image, ImageTk
 
 # Species/Breed source CSV (FAO list)
 SPECIES_CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fao_dad_list - Species.csv")
@@ -167,9 +168,34 @@ def open_livestock_form(parent, refresh_callback):
                 color_var.get()
             )
             insert_livestock_extended(data_ext)
-            generate_barcode(tag_var.get())
-            generate_qr(tag_var.get(), selected_species, selected_breed)
+            barcode_path = generate_barcode(tag_var.get())
+            qr_path = generate_qr(tag_var.get(), selected_species, selected_breed)
             messagebox.showinfo("Success", "Livestock added successfully!")
+            # Preview the generated barcode
+            try:
+                preview = tk.Toplevel(window)
+                preview.title(f"Barcode: {tag_var.get()}")
+                preview.geometry("420x200")
+                img = Image.open(barcode_path)
+                photo = ImageTk.PhotoImage(img)
+                # Keep a reference to avoid garbage collection
+                preview.img_ref = photo
+                lbl = ttk.Label(preview, image=photo)
+                lbl.pack(padx=10, pady=10)
+            except Exception:
+                pass
+            # Preview the generated QR code
+            try:
+                qr_prev = tk.Toplevel(window)
+                qr_prev.title(f"QR: {tag_var.get()}")
+                qr_prev.geometry("420x420")
+                qimg = Image.open(qr_path)
+                qphoto = ImageTk.PhotoImage(qimg)
+                qr_prev.img_ref = qphoto
+                qlbl = ttk.Label(qr_prev, image=qphoto)
+                qlbl.pack(padx=10, pady=10)
+            except Exception:
+                pass
             refresh_callback()
             window.destroy()
         except ValueError:
