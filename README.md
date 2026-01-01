@@ -4,6 +4,10 @@ A collection of AI/ML and optimization projects, algorithms, and experiments. Th
 
 ## Project Index
 
+- farm_livestock_portal/
+  - Desktop portal for farm livestock tracking (Tkinter + MySQL) with barcode/QR workflows and AI-assisted health inference.
+  - See [farm_livestock_portal/README.md](farm_livestock_portal/README.md).
+
 - HALA/
   - Hybrid Approximate Linear Algebra for robot dynamics with Pinocchio. Benchmarks Gauss-Jordan, Neumann, SPAI, and the HALA hybrid.
   - See HALA/README.md.
@@ -32,9 +36,7 @@ A collection of AI/ML and optimization projects, algorithms, and experiments. Th
   - optimizing_mat_mul_and_cuda/: matrix multiplication optimization and CUDA notes/code.
   - .vscode/: workspace settings.
 
-- farm_livestock_portal/
-  - Desktop portal for farm livestock tracking (Tkinter + MySQL) with barcode/QR workflows and AI-assisted health inference.
-  - See [farm_livestock_portal/README.md](farm_livestock_portal/README.md).
+
 
 ## Getting Started (macOS)
 
