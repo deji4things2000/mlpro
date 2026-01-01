@@ -6,9 +6,39 @@ from config.db_config import DB_CONFIG
 def get_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+def ensure_livestock_table():
+    """Create livestock table if it doesn't exist."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS livestock (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                animal_tag VARCHAR(64) NOT NULL,
+                animal_type VARCHAR(64) NOT NULL,
+                breed VARCHAR(128) NULL,
+                age INT NULL,
+                health_status VARCHAR(64) NULL,
+                purchase_date DATE NULL,
+                livestock_type VARCHAR(64) NULL,
+                color VARCHAR(64) NULL
+            )
+            """
+        )
+        conn.commit()
+    except mysql.connector.Error as err:
+        print(f"MySQL Error (ensure table): {err}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
 def ensure_columns():
     """Ensure optional columns exist for extended attributes."""
     try:
+        ensure_livestock_table()
         conn = get_connection()
         cursor = conn.cursor()
         # Check existing columns
@@ -22,6 +52,25 @@ def ensure_columns():
         if alters:
             cursor.execute(f"ALTER TABLE livestock {', '.join(alters)}")
             conn.commit()
+
+        # Ensure breed column has sufficient length to accommodate FAO names
+        try:
+            cursor.execute(
+                """
+                SELECT CHARACTER_MAXIMUM_LENGTH
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'livestock'
+                  AND COLUMN_NAME = 'breed'
+                """
+            )
+            result = cursor.fetchone()
+            if result and result[0] is not None and int(result[0]) < 255:
+                cursor.execute("ALTER TABLE livestock MODIFY COLUMN breed VARCHAR(255) NULL")
+                conn.commit()
+        except mysql.connector.Error as err:
+            # Non-fatal; continue even if information_schema query fails
+            print(f"Schema length check warning: {err}")
     except mysql.connector.Error as err:
         # Non-fatal; inserts will omit extended fields if schema can't be altered
         print(f"Schema ensure warning: {err}")
@@ -35,6 +84,7 @@ def ensure_columns():
 def insert_livestock(data):
     """Insert new livestock record into MySQL"""
     try:
+        ensure_livestock_table()
         conn = get_connection()
         cursor = conn.cursor()
         query = """
@@ -85,6 +135,7 @@ def insert_livestock_extended(data):
 def fetch_all_livestock():
     """Fetch all livestock records"""
     try:
+        ensure_livestock_table()
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM livestock")
@@ -103,6 +154,114 @@ def delete_livestock_by_id(livestock_id):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM livestock WHERE id = %s", (livestock_id,))
+        conn.commit()
+    except mysql.connector.Error as err:
+        print(f"MySQL Error: {err}")
+        raise
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
+def get_livestock_by_id(livestock_id):
+    """Fetch a single livestock record by ID, including optional columns if present."""
+    try:
+        ensure_columns()
+        conn = get_connection()
+        cursor = conn.cursor()
+        # Attempt to fetch extended columns first
+        try:
+            cursor.execute(
+                """
+                SELECT id, animal_tag, animal_type, breed, age, health_status, purchase_date, livestock_type, color
+                FROM livestock WHERE id = %s
+                """,
+                (livestock_id,),
+            )
+            row = cursor.fetchone()
+            if row is not None:
+                return row
+        except mysql.connector.Error:
+            # Fallback to basic set of columns
+            cursor.execute(
+                "SELECT id, animal_tag, animal_type, breed, age, health_status, purchase_date FROM livestock WHERE id = %s",
+                (livestock_id,),
+            )
+            row = cursor.fetchone()
+            if row is not None:
+                # Pad missing optional fields with None
+                return row + (None, None)
+        return None
+    except mysql.connector.Error as err:
+        print(f"MySQL Error: {err}")
+        return None
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
+def update_livestock_extended(data_with_id):
+    """Update livestock record by ID, including optional type/color when available.
+    data_with_id: (animal_tag, animal_type, breed, age, health_status, purchase_date, livestock_type, color, id)
+    """
+    try:
+        ensure_columns()
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                UPDATE livestock SET
+                    animal_tag = %s,
+                    animal_type = %s,
+                    breed = %s,
+                    age = %s,
+                    health_status = %s,
+                    purchase_date = %s,
+                    livestock_type = %s,
+                    color = %s
+                WHERE id = %s
+                """,
+                data_with_id,
+            )
+        except mysql.connector.Error:
+            # Fallback to basic update without optional fields
+            cursor.execute(
+                """
+                UPDATE livestock SET
+                    animal_tag = %s,
+                    animal_type = %s,
+                    breed = %s,
+                    age = %s,
+                    health_status = %s,
+                    purchase_date = %s
+                WHERE id = %s
+                """,
+                data_with_id[:6] + (data_with_id[-1],),
+            )
+        conn.commit()
+    except mysql.connector.Error as err:
+        print(f"MySQL Error: {err}")
+        raise
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+def update_health_status_by_tag(animal_tag, status):
+    """Update health_status for a livestock entry by its tag."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE livestock SET health_status = %s WHERE animal_tag = %s",
+            (status, animal_tag),
+        )
         conn.commit()
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err}")
