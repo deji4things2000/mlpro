@@ -3,7 +3,8 @@
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
+import csv
 
 # Ensure project root is on sys.path when running as a script
 try:
@@ -13,7 +14,7 @@ try:
 except Exception:
     pass
 
-from services.db_service import fetch_all_livestock, delete_livestock_by_id
+from services.db_service import fetch_livestock_for_user, delete_livestock_by_id
 from gui.livestock_form import open_livestock_form, open_edit_livestock_form, generate_barcode, generate_qr
 from gui.health_records import open_health_records
 import os
@@ -23,7 +24,7 @@ from gui.styles import apply_base_styles
 BARCODE_DIR = "assets/barcodes/"
 
 class FarmApp:
-    def __init__(self, root):
+    def __init__(self, root, username: str | None = None):
         self.root = root
         self.root.title("Farm Livestock Portal")
         # Resize to fit screen and allow resizing
@@ -36,7 +37,11 @@ class FarmApp:
         # Improve base styles
         apply_base_styles(root)
 
-        header = ttk.Label(root, text="Farm Livestock Portal", style="Header.TLabel")
+        self.username = (username or "").strip()
+        self.is_admin = (self.username.lower() == "admin") if self.username else False
+
+        header_text = "Farm Livestock Portal" if not self.username else f"Farm Livestock Portal — {self.username}{' (admin)' if self.is_admin else ''}"
+        header = ttk.Label(root, text=header_text, style="Header.TLabel")
         header.pack(pady=(10, 5))
 
         # Search / filter bar
@@ -95,6 +100,9 @@ class FarmApp:
         edit_button = ttk.Button(button_frame, text="Edit Selected", command=self.edit_selected, style="Secondary.TButton")
         edit_button.pack(side="left", padx=5)
 
+        export_button = ttk.Button(button_frame, text="Export CSV", command=self.export_csv, style="Secondary.TButton")
+        export_button.pack(side="left", padx=5)
+
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
         status = ttk.Label(root, textvariable=self.status_var, anchor="w")
@@ -105,7 +113,7 @@ class FarmApp:
     def refresh_table(self):
         for i in self.tree.get_children():
             self.tree.delete(i)
-        rows = fetch_all_livestock()
+        rows = fetch_livestock_for_user(self.username, self.is_admin)
         self.all_rows = rows
         for idx, row in enumerate(rows):
             tag = 'odd' if idx % 2 else 'even'
@@ -147,7 +155,31 @@ class FarmApp:
         self.sort_reverse[col] = reverse
 
     def open_form(self):
-        open_livestock_form(self.root, self.refresh_table)
+        open_livestock_form(self.root, self.refresh_table, self.username)
+
+    def export_csv(self):
+        try:
+            path = filedialog.asksaveasfilename(
+                parent=self.root,
+                title="Save Livestock CSV",
+                defaultextension=".csv",
+                filetypes=[("CSV Files", ".csv")],
+                initialfile="livestock_export.csv",
+            )
+            if not path:
+                return
+            # Use current table view
+            cols = ["ID", "Tag", "Type", "Breed", "Age", "DOB", "Health", "Purchase"]
+            rows = []
+            for item in self.tree.get_children():
+                rows.append(self.tree.item(item, "values"))
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(cols)
+                writer.writerows(rows)
+            messagebox.showinfo("Export", f"Exported {len(rows)} rows to:\n{path}")
+        except Exception as e:
+            messagebox.showerror("Export", f"Failed to export: {e}")
 
     def generate_barcode_selected(self):
         selection = self.tree.selection()

@@ -51,6 +51,8 @@ def ensure_columns():
             alters.append("ADD COLUMN color VARCHAR(64) NULL")
         if 'date_of_birth' not in columns:
             alters.append("ADD COLUMN date_of_birth DATE NULL")
+        if 'created_by' not in columns:
+            alters.append("ADD COLUMN created_by VARCHAR(150) NULL")
         if alters:
             cursor.execute(f"ALTER TABLE livestock {', '.join(alters)}")
             conn.commit()
@@ -83,6 +85,49 @@ def ensure_columns():
         except Exception:
             pass
 
+def ensure_indexes():
+    """Ensure useful indexes exist for integrity and performance."""
+    try:
+        ensure_livestock_table()
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT INDEX_NAME FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'livestock'
+            """
+        )
+        existing = {row[0] for row in cursor.fetchall()}
+        # Unique tag
+        if 'ux_livestock_tag' not in existing:
+            try:
+                cursor.execute("CREATE UNIQUE INDEX ux_livestock_tag ON livestock(animal_tag)")
+                conn.commit()
+            except mysql.connector.Error as err:
+                print(f"Index create warning (tag): {err}")
+        # Species/type index
+        if 'idx_livestock_species' not in existing:
+            try:
+                cursor.execute("CREATE INDEX idx_livestock_species ON livestock(animal_type)")
+                conn.commit()
+            except mysql.connector.Error as err:
+                print(f"Index create warning (species): {err}")
+        # Purchase date index
+        if 'idx_livestock_purchase' not in existing:
+            try:
+                cursor.execute("CREATE INDEX idx_livestock_purchase ON livestock(purchase_date)")
+                conn.commit()
+            except mysql.connector.Error as err:
+                print(f"Index create warning (purchase): {err}")
+    except mysql.connector.Error as err:
+        print(f"Index ensure warning: {err}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
 def insert_livestock(data):
     """Insert new livestock record into MySQL"""
     try:
@@ -106,13 +151,14 @@ def insert_livestock_extended(data):
     """Insert livestock including optional type/color and date_of_birth. Ensures columns exist."""
     try:
         ensure_columns()
+        ensure_indexes()
         conn = get_connection()
         cursor = conn.cursor()
         # Try extended insert first
         query_ext = """
             INSERT INTO livestock 
-            (animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         try:
             cursor.execute(query_ext, data)
@@ -123,8 +169,8 @@ def insert_livestock_extended(data):
                 (animal_tag, animal_type, breed, age, health_status, purchase_date)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """
-            # Map to basic fields: skip date_of_birth and optional type/color
-            basic = (data[0], data[1], data[2], data[3], data[5], data[6])
+            # Map to basic fields: skip date_of_birth, optional type/color, and created_by
+            basic = (data[0], data[1], data[2], data[3], data[6], data[7])
             cursor.execute(query_basic, basic)
         conn.commit()
     except mysql.connector.Error as err:
@@ -158,6 +204,43 @@ def fetch_all_livestock():
         cursor.close()
         conn.close()
 
+def fetch_livestock_for_user(username: str | None, is_admin: bool = False):
+    """Fetch livestock rows for UI. Admin sees all; users see only records they created."""
+    try:
+        ensure_columns()
+        ensure_indexes()
+        conn = get_connection()
+        cursor = conn.cursor()
+        if is_admin:
+            cursor.execute(
+                """
+                SELECT id, animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date
+                FROM livestock
+                ORDER BY id ASC
+                """
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT id, animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date
+                FROM livestock
+                WHERE created_by = %s
+                ORDER BY id ASC
+                """,
+                (username or "",),
+            )
+        rows = cursor.fetchall()
+        return rows
+    except mysql.connector.Error as err:
+        print(f"MySQL Error: {err}")
+        return []
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
 def delete_livestock_by_id(livestock_id):
     """Delete a livestock record by its ID"""
     try:
@@ -185,7 +268,7 @@ def get_livestock_by_id(livestock_id):
         try:
             cursor.execute(
                 """
-                SELECT id, animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color
+                SELECT id, animal_tag, animal_type, breed, age, date_of_birth, health_status, purchase_date, livestock_type, color, created_by
                 FROM livestock WHERE id = %s
                 """,
                 (livestock_id,),
@@ -201,8 +284,8 @@ def get_livestock_by_id(livestock_id):
             )
             row = cursor.fetchone()
             if row is not None:
-                # Pad missing optional fields with None
-                return row + (None, None, None)
+                # Pad missing optional fields with None (dob, livestock_type, color, created_by)
+                return row + (None, None, None, None)
         return None
     except mysql.connector.Error as err:
         print(f"MySQL Error: {err}")

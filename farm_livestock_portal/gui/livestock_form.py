@@ -81,7 +81,7 @@ def generate_qr(tag, species=None, breed=None):
     img.save(filename)
     return filename
 
-def open_livestock_form(parent, refresh_callback):
+def open_livestock_form(parent, refresh_callback, current_user: str | None = None):
     window = tk.Toplevel(parent)
     window.title("Add New Livestock")
     # Make the form larger and resizable so calendar fits
@@ -204,7 +204,8 @@ def open_livestock_form(parent, refresh_callback):
                 health_var.get(),
                 date_entry.get_date(),
                 livestock_type_var.get(),
-                color_var.get()
+                color_var.get(),
+                (current_user or "")
             )
             insert_livestock_extended(data_ext)
             barcode_path = generate_barcode(tag_var.get())
@@ -290,7 +291,8 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
         window.destroy()
         return
     # record: (id, tag, species, breed, age, health, purchase_date, livestock_type, color)
-    _, tag_val, species_val, breed_val, age_val, dob_val, health_val, purchase_date_val, livestock_type_val, color_val = record
+    # record may include created_by at the end; ignore it for editing
+    _, tag_val, species_val, breed_val, age_val, dob_val, health_val, purchase_date_val, livestock_type_val, color_val, *_rest = record
 
     tk.Label(window, text="Animal Tag", font=font_style).pack(pady=5)
     tag_var = tk.StringVar(value=tag_val)

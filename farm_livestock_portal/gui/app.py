@@ -12,6 +12,7 @@ except Exception:
 
 from gui.main_app import FarmApp
 from gui.styles import apply_base_styles
+from gui.auth import open_auth
 
 
 def main():
@@ -28,7 +29,24 @@ def main():
 	except Exception:
 		pass
 
-	app = FarmApp(root)
+	# Show sign-in page on startup; main app is available after
+	# Hide main window until login
+	root.withdraw()
+
+	def on_login(user):
+		try:
+			# Show main app scoped to user
+			FarmApp(root, user.get("username"))
+			root.deiconify()
+		except Exception:
+			root.deiconify()
+
+	try:
+		open_auth(root, on_login=on_login)
+	except Exception:
+		# Fallback: show app without user context
+		FarmApp(root)
+		root.deiconify()
 	root.mainloop()
 
 

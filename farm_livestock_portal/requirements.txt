@@ -6,3 +6,4 @@ tkcalendar
 qrcode
 scikit-learn
 joblib
+bcrypt
