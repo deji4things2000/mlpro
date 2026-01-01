@@ -13,6 +13,7 @@ from services.health_service import (
     update_health_record,
 )
 from services.db_service import fetch_all_livestock
+from gui.styles import apply_base_styles
 
 SPECIES_CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fao_dad_list - Species.csv")
 
@@ -40,6 +41,12 @@ class HealthRecordsWindow:
         self.window.title("Health Records")
         self.window.geometry("900x700")
         self.window.resizable(True, True)
+
+        # Apply shared styles
+        try:
+            apply_base_styles(self.window)
+        except Exception:
+            pass
 
         ensure_health_table()
 
@@ -95,9 +102,9 @@ class HealthRecordsWindow:
         # Actions
         action_frame = ttk.Frame(self.window)
         action_frame.pack(pady=5)
-        ttk.Button(action_frame, text="Add Record", command=self.open_add_form).pack(side="left", padx=6)
-        ttk.Button(action_frame, text="Edit Selected", command=self.open_edit_form).pack(side="left", padx=6)
-        ttk.Button(action_frame, text="Delete Selected", command=self.delete_selected).pack(side="left", padx=6)
+        ttk.Button(action_frame, text="Add Record", command=self.open_add_form, style="Primary.TButton").pack(side="left", padx=6)
+        ttk.Button(action_frame, text="Edit Selected", command=self.open_edit_form, style="Secondary.TButton").pack(side="left", padx=6)
+        ttk.Button(action_frame, text="Delete Selected", command=self.delete_selected, style="Danger.TButton").pack(side="left", padx=6)
 
         self.refresh()
         self.load_animals()
@@ -157,6 +164,10 @@ class HealthRecordsWindow:
         win.title("Add Health Record")
         win.geometry("600x700")
         win.resizable(True, True)
+        try:
+            apply_base_styles(win)
+        except Exception:
+            pass
         font_style = ("Helvetica", 11)
 
         # Animal selector (prefills tag/species)
@@ -258,7 +269,7 @@ class HealthRecordsWindow:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save: {e}")
 
-        ttk.Button(win, text="Save", command=save_record).pack(pady=15)
+        ttk.Button(win, text="Save", command=save_record, style="Primary.TButton").pack(pady=15)
 
     def open_edit_form(self):
         selected = self.tree.selection()
@@ -276,6 +287,10 @@ class HealthRecordsWindow:
         win.title("Edit Health Record")
         win.geometry("600x700")
         win.resizable(True, True)
+        try:
+            apply_base_styles(win)
+        except Exception:
+            pass
         font_style = ("Helvetica", 11)
 
         ttk.Label(win, text="Animal Tag", font=font_style).pack(pady=5)
@@ -366,7 +381,7 @@ class HealthRecordsWindow:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update: {e}")
 
-        ttk.Button(win, text="Save Changes", command=save_changes).pack(pady=15)
+        ttk.Button(win, text="Save Changes", command=save_changes, style="Primary.TButton").pack(pady=15)
 
 
 def open_health_records(parent, refresh_callback=None):

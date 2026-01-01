@@ -13,6 +13,7 @@ from barcode.writer import ImageWriter
 import qrcode
 import urllib.parse
 from PIL import Image, ImageTk
+from gui.styles import apply_base_styles
 
 # Species/Breed source CSV (FAO list)
 SPECIES_CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fao_dad_list - Species.csv")
@@ -87,6 +88,20 @@ def open_livestock_form(parent, refresh_callback):
     window.geometry("700x800")
     window.resizable(True, True)
 
+    try:
+        apply_base_styles(window)
+    except Exception:
+        pass
+
+    def close_window(event=None):
+        try:
+            window.destroy()
+        except Exception:
+            pass
+
+    window.bind("<Escape>", close_window)
+    window.protocol("WM_DELETE_WINDOW", close_window)
+
     font_style = ("Helvetica", 11)
 
     # Generate random tag initially based on available species
@@ -121,6 +136,10 @@ def open_livestock_form(parent, refresh_callback):
     color_dropdown = ttk.Combobox(window, textvariable=color_var, values=color_options, font=font_style)
     color_dropdown.pack(fill="x", padx=20)
 
+    tk.Label(window, text="Date of Birth", font=font_style).pack(pady=5)
+    dob_entry = DateEntry(window, date_pattern='yyyy-mm-dd', font=font_style)
+    dob_entry.pack(fill="x", padx=20)
+
     tk.Label(window, text="Age (years)", font=font_style).pack(pady=5)
     age_var = tk.StringVar()
     age_entry = tk.Entry(window, textvariable=age_var, font=font_style)
@@ -148,6 +167,24 @@ def open_livestock_form(parent, refresh_callback):
 
     type_dropdown.bind("<<ComboboxSelected>>", on_type_change)
 
+    def _update_age_from_dob(event=None):
+        try:
+            from datetime import date
+            dob = dob_entry.get_date()
+            today = date.today()
+            years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            if years < 0:
+                years = 0
+            age_var.set(str(years))
+        except Exception:
+            pass
+
+    # Update age when a DOB is selected from the calendar
+    try:
+        dob_entry.bind("<<DateEntrySelected>>", _update_age_from_dob)
+    except Exception:
+        pass
+
     def save():
         try:
             age = int(age_var.get())
@@ -163,6 +200,7 @@ def open_livestock_form(parent, refresh_callback):
                 selected_species,
                 selected_breed,
                 age,
+                dob_entry.get_date(),
                 health_var.get(),
                 date_entry.get_date(),
                 livestock_type_var.get(),
@@ -216,8 +254,12 @@ def open_livestock_form(parent, refresh_callback):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save: {e}")
 
-    save_button = tk.Button(window, text="Save Livestock", command=save, font=font_style, bg="#4CAF50", fg="white")
-    save_button.pack(pady=15, ipadx=10, ipady=5)
+    btns = ttk.Frame(window)
+    btns.pack(pady=15)
+    save_button = ttk.Button(btns, text="Save Livestock", command=save, style="Primary.TButton")
+    save_button.pack(side="left", padx=10)
+    cancel_button = ttk.Button(btns, text="Cancel", command=close_window, style="Secondary.TButton")
+    cancel_button.pack(side="left", padx=10)
 
 
 def open_edit_livestock_form(parent, refresh_callback, livestock_id):
@@ -225,6 +267,20 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
     window.title("Edit Livestock")
     window.geometry("700x800")
     window.resizable(True, True)
+
+    try:
+        apply_base_styles(window)
+    except Exception:
+        pass
+
+    def close_window(event=None):
+        try:
+            window.destroy()
+        except Exception:
+            pass
+
+    window.bind("<Escape>", close_window)
+    window.protocol("WM_DELETE_WINDOW", close_window)
 
     font_style = ("Helvetica", 11)
 
@@ -234,7 +290,7 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
         window.destroy()
         return
     # record: (id, tag, species, breed, age, health, purchase_date, livestock_type, color)
-    _, tag_val, species_val, breed_val, age_val, health_val, purchase_date_val, livestock_type_val, color_val = record
+    _, tag_val, species_val, breed_val, age_val, dob_val, health_val, purchase_date_val, livestock_type_val, color_val = record
 
     tk.Label(window, text="Animal Tag", font=font_style).pack(pady=5)
     tag_var = tk.StringVar(value=tag_val)
@@ -263,6 +319,15 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
     color_var = tk.StringVar(value=(color_val or ""))
     color_dropdown = ttk.Combobox(window, textvariable=color_var, values=color_options, font=font_style)
     color_dropdown.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Date of Birth", font=font_style).pack(pady=5)
+    dob_entry = DateEntry(window, date_pattern='yyyy-mm-dd', font=font_style)
+    try:
+        if dob_val:
+            dob_entry.set_date(dob_val)
+    except Exception:
+        pass
+    dob_entry.pack(fill="x", padx=20)
 
     tk.Label(window, text="Age (years)", font=font_style).pack(pady=5)
     age_var = tk.StringVar(value=str(age_val or ""))
@@ -297,6 +362,23 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
 
     type_dropdown.bind("<<ComboboxSelected>>", on_type_change)
 
+    def _update_age_from_dob(event=None):
+        try:
+            from datetime import date
+            dob = dob_entry.get_date()
+            today = date.today()
+            years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            if years < 0:
+                years = 0
+            age_var.set(str(years))
+        except Exception:
+            pass
+
+    try:
+        dob_entry.bind("<<DateEntrySelected>>", _update_age_from_dob)
+    except Exception:
+        pass
+
     def save():
         try:
             age = int(age_var.get()) if (age_var.get() or "").strip() != "" else None
@@ -311,6 +393,7 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
                 selected_species,
                 selected_breed,
                 age,
+                dob_entry.get_date(),
                 health_var.get(),
                 date_entry.get_date(),
                 livestock_type_var.get(),
@@ -326,5 +409,9 @@ def open_edit_livestock_form(parent, refresh_callback, livestock_id):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update: {e}")
 
-    save_button = tk.Button(window, text="Save Changes", command=save, font=font_style, bg="#1976D2", fg="white")
-    save_button.pack(pady=15, ipadx=10, ipady=5)
+    btns = ttk.Frame(window)
+    btns.pack(pady=15)
+    save_button = ttk.Button(btns, text="Save Changes", command=save, style="Primary.TButton")
+    save_button.pack(side="left", padx=10)
+    cancel_button = ttk.Button(btns, text="Cancel", command=close_window, style="Secondary.TButton")
+    cancel_button.pack(side="left", padx=10)
