@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from services.db_service import fetch_all_livestock
-from gui.livestock_form import open_livestock_form, generate_barcode
+from gui.livestock_form import open_livestock_form, generate_barcode, generate_qr
 import os
 
 BARCODE_DIR = "assets/barcodes/"
@@ -12,10 +12,14 @@ class FarmApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Farm Livestock Portal")
-        self.root.geometry("800x500")
-        self.root.resizable(False, False)
+        # Resize to fit screen and allow resizing
+        self.root.update_idletasks()
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        self.root.geometry(f"{screen_w}x{screen_h}")
+        self.root.resizable(True, True)
 
-        self.tree = ttk.Treeview(root, columns=("ID", "Tag", "Type", "Breed", "Age", "Health", "Date"), show="headings")
+        self.tree = ttk.Treeview(root, columns=("ID", "Tag", "Type", "Breed", "Age", "Health", "Date"), show="headings", selectmode="extended")
         for col in self.tree['columns']:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=100)
@@ -27,8 +31,11 @@ class FarmApp:
         add_button = tk.Button(button_frame, text="Add Livestock", command=self.open_form, bg="#2196F3", fg="white", padx=10, pady=5)
         add_button.pack(side="left", padx=5)
 
-        barcode_button = tk.Button(button_frame, text="Generate Barcode for Selected", command=self.generate_barcode_selected, bg="#FF9800", fg="white", padx=10, pady=5)
+        barcode_button = tk.Button(button_frame, text="Generate Barcodes for Selected", command=self.generate_barcode_selected, bg="#FF9800", fg="white", padx=10, pady=5)
         barcode_button.pack(side="left", padx=5)
+
+        qr_button = tk.Button(button_frame, text="Generate QR Codes for Selected", command=self.generate_qr_selected, bg="#795548", fg="white", padx=10, pady=5)
+        qr_button.pack(side="left", padx=5)
 
         self.refresh_table()
 
@@ -43,14 +50,30 @@ class FarmApp:
         open_livestock_form(self.root, self.refresh_table)
 
     def generate_barcode_selected(self):
-        selected = self.tree.focus()
-        if not selected:
-            messagebox.showwarning("Warning", "Select an animal first")
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Select at least one animal")
             return
-        values = self.tree.item(selected, "values")
-        tag = values[1]
-        filename = generate_barcode(tag)
-        messagebox.showinfo("Success", f"Barcode generated at {filename}")
+        files = []
+        for item in selection:
+            values = self.tree.item(item, "values")
+            tag = values[1]
+            files.append(generate_barcode(tag))
+        messagebox.showinfo("Success", f"Generated {len(files)} barcodes. Last: {files[-1]}")
+
+    def generate_qr_selected(self):
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Select at least one animal")
+            return
+        files = []
+        for item in selection:
+            values = self.tree.item(item, "values")
+            tag = values[1]
+            species = values[2]
+            breed = values[3]
+            files.append(generate_qr(tag, species, breed))
+        messagebox.showinfo("Success", f"Generated {len(files)} QR codes. Last: {files[-1]}")
 
 if __name__ == "__main__":
     os.makedirs(BARCODE_DIR, exist_ok=True)

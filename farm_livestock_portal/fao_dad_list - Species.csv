@@ -1,0 +1,916 @@
+Species,Breed
+Alpaca,Huacaya
+Alpaca,Suri
+Alpaca,Chilian Alpaca
+Alpaca,Llamingos-pucungos
+Bison,American Plains Bison
+Bison,American Wood Bison
+Bison,Biisoni
+Bison,American Bison
+Buffalo,Water Buffalo / Domestic Buffalo (general term)
+Buffalo,"Swamp Buffalo (common in Southeast Asia, China, Papua New Guinea)"
+Buffalo,"River Buffalo (common in South Asia, e.g., Murrah, Bhadawari, Jafarabadi, Surti, Mehsana, Nili-Ravi)"
+Buffalo,Murrah (India/Pakistan – widely recognized breed)
+Buffalo,Jafarabadi (India – large heavy breed)
+Buffalo,Bhadawari (India/Pakistan)
+Buffalo,Surti (India)
+Buffalo,Mehsana (India)
+Buffalo,Banni (India – Gujarat)
+Buffalo,Nili-Ravi (Pakistan – Punjab)
+Buffalo,"Mediterranean / Mediterranea / Bufala Mediterranea Italiana (Italy, Greece, Balkans)"
+Buffalo,American Bison (North America – sometimes grouped with buffalo in livestock lists)
+Buffalo,Wild Water Buffalo (Bubalus arnee)
+Buffalo,Anoa (Indonesia – Sulawesi dwarf buffalo)
+Buffalo,Philippine Carabao (Philippines)
+Buffalo,Borneo Buffalo / Kerbau-Sawah / Selembu / Kalang (Southeast Asia)
+Buffalo,Nepalese Hill / Nepalese Mountain Buffalo
+Buffalo,Egyptian / Khuzestan Buffalo
+Buffalo,Lanka / Mannar Buffalo (Sri Lanka)
+Buffalo,Ghab Buffalo / Khouay / Trau Noi / Ngo / De (Middle East & Vietnam regional types)
+Buffalo,"Nondescript / Local Buffaloes (catch-all for minor, unclassified local populations worldwide)"
+Camel,Bactrian Camel (general/common type)
+Camel,Mongolian Bactrian Camel
+Camel,Kazakh Bactrian Camel
+Camel,Kalmyk Bactrian Camel
+Camel,Indian Bactrian Camel
+Camel,Camello Canario (Canary Islands)
+Camel,"Chinese Bactrian Camel (covers Alxa, Qinghai, Sonid, Xinjiang Junggar, Xinjiang Tarim)"
+Camel,"Mongolian / Inner Mongolia regional types (covers Galbin goviin ulaan, Khanin khetsiin khuren, Tukhum Tungalagin khuren)"
+Camel,Australian Feral Dromedary
+Camel,Camelus dromedarius
+Camel,Botswana Camel
+Camel,Fallahi
+Camel,Maghrabi
+Camel,Mowalled
+Camel,Sudani
+Camel,Amibara
+Camel,Borena
+Camel,Gellebe
+Camel,Hoor
+Camel,Jijiga
+Camel,Liben
+Camel,Mille
+Camel,Shinille
+Camel,Bikaneri
+Camel,Jaisalmeri
+Camel,Jalori
+Camel,Kharai
+Camel,Kutchi
+Camel,Malvi
+Camel,Marwari
+Camel,Mewari
+Camel,Mewati
+Camel,Sindhi
+Camel,Baluchi
+Camel,Bushehr
+Camel,Kalkoohi
+Camel,Kerman
+Camel,South Khorasan
+Camel,Turkmen
+Camel,Yazd
+Camel,Iraqi
+Camel,Judi
+Camel,Khawar
+Camel,Shamelia
+Camel,Arvana-Kazakh Type
+Camel,Turkmen Arvana
+Camel,Rendille
+Camel,Somali
+Camel,Turkana
+Camel,Guerzni
+Camel,Jebli
+Camel,Khaouri
+Camel,Marmouri
+Camel,Bérabiche
+Camel,Chameau De L'azaouad
+Camel,Chameau Du Hodh
+Camel,Chameau De L'aftout
+Camel,Chameau Du Sahel
+Camel,Azarghaf
+Camel,Azawak
+Camel,Berabish
+Camel,Yoria
+Camel,Saharan Camel
+Camel,Camel
+Camel,Majaheim
+Camel,Omani
+Camel,Dromadaire
+Camel,Albishari
+Camel,Anafi
+Camel,Rashaidi
+Camel,Kenany
+Camel,Sudan West
+Camel,Arab Camel
+Camel,Gorane
+Camel,Le Chameau du Kanem
+Camel,Mahamid
+Camel,Maghrebi
+Camel,Arak
+Camel,Hojun
+Camel,Horra
+Camel,Dromedary
+Camel,Bactrian
+Camel,Dromedary-Bactrian Hybrid
+Cattle,Aberdeen Angus
+Cattle,African N’Dama
+Cattle,Ankole / Watusi
+Cattle,Ayrshire
+Cattle,Belgian Blue
+Cattle,Blonde d’Aquitaine
+Cattle,Brahman
+Cattle,Brangus
+Cattle,Braford
+Cattle,Brown Swiss
+Cattle,Charolais
+Cattle,Chianina
+Cattle,Criollo / South American local cattle
+Cattle,Dexter
+Cattle,Devon
+Cattle,Fleckvieh / Simmental
+Cattle,Galloway
+Cattle,Gelbvieh
+Cattle,Gir
+Cattle,Guernsey
+Cattle,Hereford
+Cattle,Highland / Highland Miniature
+Cattle,Holstein
+Cattle,Jersey
+Cattle,Lowline Angus
+Cattle,Maine Anjou
+Cattle,Nelore / Nellore
+Cattle,Norwegian Red
+Cattle,Piemontese
+Cattle,Podolian / Grey Podolian
+Cattle,Red Angus
+Cattle,Red Sindhi
+Cattle,Sahiwal
+Cattle,Shorthorn
+Cattle,South Devon
+Cattle,Tarentaise
+Cattle,Wagyu
+Cattle,Zebu
+Cattle,Banteng
+Cattle,"Scandinavian Red / Nordic dairy (Swedish Red, Norwegian Red, Danish Red)"
+Chicken,Local Chicken
+Chicken,Brown Layer
+Chicken,Rhode Island Red
+Chicken,American Game
+Chicken,Ancona
+Chicken,Andalusian
+Chicken,Appenzeller Spitzhauben
+Chicken,Araucana
+Chicken,Asil / Aseel
+Chicken,Australian Game
+Chicken,Australian Langshan
+Chicken,Australorp
+Chicken,Barnevelder
+Chicken,"Belgian Barbu (d’Anvers, d’Uccles, d’Watermael)"
+Chicken,Brahma
+Chicken,Campine
+Chicken,Cochin
+Chicken,Crevecoeur
+Chicken,Croad Langshan
+Chicken,Dorking
+Chicken,Dutch Bantam
+Chicken,Faverolles
+Chicken,Fayoumi
+Chicken,Frizzle
+Chicken,Hamburgh
+Chicken,Houdan
+Chicken,Indian Game
+Chicken,Ixworth
+Chicken,Japanese Bantam
+Chicken,Jungle Fowl
+Chicken,La Flèche
+Chicken,Lakenvelder
+Chicken,Legbar
+Chicken,"Leghorn (White, Brown, other types)"
+Chicken,Malay
+Chicken,Marans
+Chicken,Minorca
+Chicken,Modern Game
+Chicken,New Hampshire
+Chicken,Old English Game
+Chicken,Old English Pheasant Fowl
+Chicken,Orloff
+Chicken,Orpington
+Chicken,Pekin
+Chicken,Phoenix
+Chicken,Plymouth Rock / Barred Plymouth Rock
+Chicken,Polish
+Chicken,Redcap
+Chicken,Rosecomb
+Chicken,Scots Grey
+Chicken,Sebright
+Chicken,Shamo
+Chicken,Sicilian Buttercup / Hornet
+Chicken,Silkie
+Chicken,Spanish
+Chicken,Sultan
+Chicken,Sumatra
+Chicken,"Sussex (Light, Speckled)"
+Chicken,Transylvanian Naked Neck
+Chicken,Vorwerk
+Chicken,Welbar
+Chicken,Welsummer
+Chicken,Wyandotte
+Chicken,Yokohama / Japanese Long-tailed
+Chicken,Sulmtaler
+Chicken,Sekaganda
+Chicken,Aseel (miniature included as generic type)
+Chicken,Native / Local Dwarf
+Deer,Deer
+Deer,Red Deer
+Deer,Fallow Deer
+Deer,Sika Deer
+Deer,Chinese Water Deer
+Deer,Formosan Sika Deer
+Deer,Japanese Deer
+Deer,Elk / Wapiti
+Deer,Rusa Deer
+Deer,Sambar Deer
+Dog,German Shepherd
+Dog,Labrador Retriever
+Dog,Golden Retriever
+Dog,Beagle
+Dog,Bulldog
+Dog,Poodle
+Dog,Rottweiler
+Dog,Yorkshire Terrier
+Dog,Boxer
+Dog,Dachshund
+Dog,Siberian Husky
+Dog,Shih Tzu
+Dog,Doberman Pinscher
+Dog,Australian Shepherd
+Dog,Cocker Spaniel
+Dog,Great Dane
+Dog,Chihuahua
+Dog,Maltese
+Dog,Bichon Frise
+Dog,Pomeranian
+Dog,Border Collie
+Dog,Saint Bernard
+Dog,Cavalier King Charles Spaniel
+Dog,Akita
+Dog,French Bulldog
+Dog,Pembroke Welsh Corgi
+Dog,Cardigan Welsh Corgi
+Dog,Boston Terrier
+Dog,Miniature Schnauzer
+Dog,Standard Schnauzer
+Dog,Giant Schnauzer
+Dog,Alaskan Malamute
+Dog,Weimaraner
+Dog,Newfoundland
+Dog,Bull Terrier
+Dog,Staffordshire Bull Terrier
+Dog,Scottish Terrier
+Dog,West Highland White Terrier
+Dog,Soft Coated Wheaten Terrier
+Dog,Irish Setter
+Dog,English Setter
+Dog,Saluki
+Dog,Borzoi
+Dog,Samoyed
+Dog,Lhasa Apso
+Dog,Italian Greyhound
+Dog,Whippet
+Dog,Airedale Terrier
+Dog,American Eskimo Dog
+Dog,Australian Cattle Dog
+Dog,Belgian Malinois
+Dog,Belgian Sheepdog
+Dog,Belgian Tervuren
+Dog,Rhodesian Ridgeback
+Dog,Keeshond
+Dog,Chow Chow
+Dog,Finnish Spitz
+Dog,Japanese Chin
+Dog,Japanese Spitz
+Dog,Norwegian Elkhound
+Dog,Norwegian Lundehund
+Dog,Shiba Inu
+Dog,Chinese Shar-Pei
+Dog,Tibetan Mastiff
+Dog,Tibetan Terrier
+Dog,Old English Sheepdog
+Dog,Irish Wolfhound
+Dog,Leonberger
+Dog,Great Pyrenees
+Dog,Cane Corso
+Dog,Fila Brasileiro
+Dog,Black Russian Terrier
+Dog,Dogo Argentino
+Dog,Perro de Presa Canario
+Dog,Thai Ridgeback
+Dog,Pharaoh Hound
+Dog,Cirneco dell’Etna
+Dog,Basenji
+Dog,Xoloitzcuintli
+Dog,Finnish Lapphund
+Dog,Swedish Vallhund
+Dog,Portuguese Water Dog
+Dog,Lagotto Romagnolo
+Dog,Icelandic Sheepdog
+Dog,Brittany Spaniel
+Dog,Clumber Spaniel
+Dog,Sussex Spaniel
+Dog,English Springer Spaniel
+Dog,Welsh Springer Spaniel
+Donkey (Ass),Standard Donkey
+Donkey (Ass),Miniature Donkey
+Donkey (Ass),Mammoth Jackstock
+Donkey (Ass),Australian Donkey
+Donkey (Ass),English Donkey
+Donkey (Ass),Irish Donkey
+Donkey (Ass),American Donkey / Burro
+Donkey (Ass),Pega
+Donkey (Ass),Spotted Donkey
+Donkey (Ass),French Donkey
+Donkey (Ass),Italian Donkey
+Donkey (Ass),Spanish Donkey
+Donkey (Ass),Portuguese Donkey
+Donkey (Ass),German / Central European Donkey
+Donkey (Ass),Balkan Donkey
+Donkey (Ass),African Donkey
+Donkey (Ass),Middle Eastern Donkey
+Donkey (Ass),Chinese Donkey
+Donkey (Ass),Indian / Persian Donkey
+Donkey (Ass),Korean Donkey
+Duck,Aylesbury
+Duck,Black East Indian
+Duck,Blue Swedish
+Duck,Call
+Duck,Campbell
+Duck,Cayuga
+Duck,Indian Runner
+Duck,Mallard
+Duck,Orpington
+Duck,Pekin
+Duck,Rouen
+Duck,Saxony
+Duck,Silver Appleyard
+Duck,Welsh Harlequin
+Duck,Khaki Campbell
+Duck,Muscovy
+Duck,Mulard
+Duck,Pomeranian (Pommern)
+Duck,Crested
+Goat,Markhor
+Goat,Alpine
+Goat,Anglo-Nubian
+Goat,Angora
+Goat,Boer
+Goat,Cashmere
+Goat,Kalahari Red
+Goat,LaMancha
+Goat,Nigerian Dwarf
+Goat,Oberhasli
+Goat,Saanen
+Goat,Toggenburg
+Goat,Spanish
+Goat,Pygmy
+Goat,Murciana
+Goat,Savanna
+Goat,Fainting (Myotonic)
+Goat,Kiko
+Goat,San Clemente
+Goat,Appenzeller
+Goat,Alpine Chamoisée
+Goat,French Alpine
+Goat,British Saanen
+Goat,British Toggenburg
+Goat,British Guernsey
+Goat,British White Dairy
+Goat,Cyprus
+Goat,Damaskini
+Goat,Nubian
+Goat,Beetal
+Goat,Barbari
+Goat,Jamunapari
+Goat,Saanens
+Goat,Swiss Saanen
+Goose (domestic),African Goose
+Goose (domestic),White Chinese
+Goose (domestic),White Emden
+Goose (domestic),Chinese
+Goose (domestic),Crested
+Goose (domestic),Egyptian
+Goose (domestic),Embden
+Goose (domestic),Pilgrim
+Goose (domestic),Pomeranian
+Goose (domestic),Roman
+Goose (domestic),Sebastopol
+Goose (domestic),Toulouse
+Goose (domestic),Vlaamse (Flemish)
+Goose (domestic),Diepholzer
+Goose (domestic),American Buff
+Goose (domestic),Brecon Buff
+Goose (domestic),Grey Landes
+Goose (domestic),Hungarian Goose
+Goose (domestic),Large White
+Goose (domestic),Italian White
+Goose (domestic),Cape Barren
+Goose (domestic),English Greylag
+Goose (domestic),Philippine Domestic Goose
+Goose (domestic),Chinese Grey
+Goose (domestic),Rhenish White
+Guanaco,Guanaco
+Guanaco,Chilian Guanaco
+Guinea fowl,Pearl Guinea Fowl
+Guinea fowl,Purple Guinea Fowl
+Guinea fowl,Parelhoen
+Guinea fowl,Helmet Guinea Fowl
+Guinea fowl,Camosciata
+Guinea fowl,Grigia Comune
+Guinea fowl,Sudanese Guineafowl
+Guinea pig,Criollo
+Guinea pig,Huacayas
+Guinea pig,Peruano
+Guinea pig,Cuy
+Guinea pig,Andina
+Guinea pig,Inti
+Guinea pig,Peru
+Horse,Arab
+Horse,Arabian
+Horse,Akhal-Teke
+Horse,Andalusian
+Horse,American Saddlebred
+Horse,American Quarter Horse
+Horse,Appaloosa
+Horse,Australian Stockhorse
+Horse,Australian Pony
+Horse,Australian Draught
+Horse,Belgian Draft
+Horse,Belgian Warmblood
+Horse,Clydesdale
+Horse,Cleveland Bay
+Horse,Connemara Pony
+Horse,Dartmoor Pony
+Horse,Exmoor Pony
+Horse,Falabella
+Horse,Friesian
+Horse,Hackney
+Horse,Haflinger
+Horse,Icelandic Horse
+Horse,Irish Draught
+Horse,Lipizzaner
+Horse,Morgan
+Horse,Mustang
+Horse,Miniature Horse
+Horse,Noriker
+Horse,Percheron
+Horse,Peruvian Paso
+Horse,Paso Fino
+Horse,Przewalski
+Horse,Quarter Horse
+Horse,Shetland Pony
+Horse,Shire
+Horse,Standardbred
+Horse,Suffolk Punch
+Horse,Thoroughbred
+Horse,Tennessee Walking Horse
+Horse,Trakehner
+Horse,Welsh Cob
+Horse,Welsh Pony
+Llama,Argentinian Llama
+Llama,Q'ara
+Llama,Tampulli
+Llama,Llama
+Llama,Chaku
+Llama,Kara
+Llama,Llamingos
+Llama,Laama
+Mithun,Gayal
+Mithun,Bamen
+Mithun,Dulong
+Ostrich,African Ostrich
+Ostrich,Australian Ostrich (farmed)
+Ostrich,South American Ostrich (farmed)
+Partridge,Grey Partridge
+Partridge,Red-legged Partridge
+Partridge,Chukar Partridge
+Partridge,Local African Partridge
+Peacock,Indian Peacock
+Peacock,Green Peafowl (Pavo muticus)
+Peacock,Congo Peafowl (Afropavo congensis)
+Pheasant,Common Belgian Pheasant
+Pheasant,Ring Neck Pheasant (Phasianus Colchicus)
+Pheasant,Japanese Green Pheasant
+Pheasant,Hobin Eungye
+Pheasant,Hobin Keumgye
+Pheasant,Koryeokkwong
+Pheasant,Golden Chinese
+Pheasant,Lady Amherst
+Pheasant,Monal
+Pheasant,Reeves
+Pheasant,Swinhoe
+Pheasant,Yellow Golden
+Pheasant,Cheer Pheasant
+Pheasant,Common Pea Fowl
+Pheasant,Himalayan Monal
+Pheasant,Kalij
+Pheasant,Tragopan Western Horned
+Pheasant,Hunting
+Pig,Comune
+Pig,Large White / Yorkshire
+Pig,Local Pig / Indigenous Pig
+Pig,Berkshire
+Pig,Chester White
+Pig,Duroc
+Pig,Hampshire / American Hampshire
+Pig,Landrace
+Pig,Large Black
+Pig,Middle White
+Pig,Montana
+Pig,Pietrain
+Pig,Poland China
+Pig,Wessex Saddleback / British Saddleback
+Pig,Tamworth
+Pig,Welsh
+Pig,Mangalitsa / Mangulica / Blond Mangalitsa / Red Mangalitsa
+Pig,Gloucester Old Spots / Gloucestershire Old Spots
+Pig,Red Wattle
+Pig,Ibérico
+Pig,Meishan / Taihu
+Pig,Erhualian
+Pig,Hampshire (European variants)
+Pig,Korean Native Pig
+Pig,Jeju Black / Jeju Native Pig
+Pig,Nigerian Native / Porc Africain
+Pig,Bali / Babi Hutan
+Pig,Sulawesi / Babi-Batak
+Pig,Apulo-Calabrese
+Pig,Casertana
+Pig,Cinta Senese
+Pig,Duroc Italiana
+Pig,Landrace Italiano
+Pig,Large White Italiana
+Pig,Mora Romagnola
+Pig,Nero Siciliano
+Pig,Nero di Lomellina
+Pig,Nero di Parma
+Pig,Sarda
+Pig,"American breeds (various lines: Topigs, PIC, Hypor)"
+Pig,Wild Pig / Boar
+Pigeon,Antigua & Barbuda Pigeon
+Pigeon,Antwerpse Smierel
+Pigeon,Reisduif / Racing Pigeon / White Racing Pigeon
+Pigeon,American King
+Pigeon,Carneau
+Pigeon,Shiqi
+Pigeon,Taihu Spot
+Pigeon,Tarim
+Pigeon,White King
+Pigeon,Native Pigeon of Cook Islands
+Pigeon,Peristeria
+Pigeon,Coburger Lerchen
+Pigeon,Luchstauben
+Pigeon,Strasser
+Pigeon,Parykduen / Svaberduen / Tumlingeduen
+Pigeon,Colom Borino / Colom Casta Grossa / Colom Escampadissa / Colom Gavatxut / Colom Nas de Xot / Colom de Pinta
+Pigeon,Jerezano
+Pigeon,Local Ghanaian Pigeon or Dove
+Pigeon,Paluma
+Pigeon,Romagnolo
+Pigeon,Sottobanca Modenese / Triganino Modenese
+Pigeon,Preap
+Pigeon,Moroccan Pigeon
+Pigeon,Amsterdamse Baardtuimelaar / Amsterdamse Tippler
+Pigeon,Gelderse Slenk / Groninger Slenk
+Pigeon,Hagenaar
+Pigeon,Hollandse Kropper / Holle Kropper / Voorburgse Schildkropper / Zeeuwse Dwergkropper
+Pigeon,Hyacinthduif
+Pigeon,Nederlandse Helmduif / Nederlandse Hoogvlieger / Nederlandse Krulveerkropper / Nederlandse Schoonheidspostduif
+Pigeon,Nonduif
+Pigeon,Oud Hollandse Tuimelaar / Oud Hollandse Meeuw / Oud-Hollandse Kapucijn
+Pigeon,Blue Rock Pigeon
+Pigeon,Philippine Domestic Pigeon
+Pigeon,Sudanese Pigeon
+Quail,Local Belgian Quail
+Quail,Korean Quail
+Quail,Ortyki
+Quail,Estonian Quail / Estonian
+Quail,Viiriäinen
+Quail,Japanese Quail / Japanese / Black Japanese Quail SNU / Wild Japanese Quail SNU / Japanese Grey
+Quail,Jumbo Brown Quail SNU
+Quail,IKTA
+Quail,Cailles
+Quail,Common Quail
+Quail,Rain Quail
+Quail,F-11 / F-22 / F-33
+Quail,J-33
+Quail,S-22 / S-33
+Quail,British Range (E e)
+Quail,English White (Wh wh) / English White
+Quail,Manchurian Golden (Y y+) / Manchzhurian Golden
+Quail,"Tuxedo (E e, Wh+)"
+Quail,Pharaon
+Quail,Phenix Golden
+Rabbit,Californian / Californien / Californijski / Californiana / Satin-Kalifornier
+Rabbit,Chinchilla / American Chinchilla / Giant Chinchilla / Soviet Chinchilla / Shinshilla
+Rabbit,Flemish Giant / Vlaamse Reus / Belgijski olbrzym / Belgijski olbrzym biały / Morawski olbrzym / Grey Giant
+Rabbit,White Giant / White New Zealand / New Zealand / New Zealand White / Weiße Neuseeländer / Rote Neuseeländer / Neo-Zélandais / Neozelandes Rojo
+Rabbit,Rex / Zwerg-Rexe / Klein-Rexe / Löwenköpfchen / Petit Rex / Rhön-Rexe / Schwarz-Rexe / Thüringer-Rexe / Rexsi Agrinak / Reza Agrinak
+Rabbit,"Angora / Angora français / Angora Hangoor / Angoradwerg / Angora, farbig / Angora, weiß"
+Rabbit,Lop / Deutsche Widder / Englische Widder / Meißner Widder / Holländer / Lop of Meissen / Nain bélier / Petit bélier
+Rabbit,Hotot / Blanc de Hotot / Weiße Hotot / Witte van Hotot / Hototský biely
+Rabbit,Satin / Satin-Blau / Satin-Castor / Satin-Chinchilla / Satin-Elfenbein / Satin-Feh / Satin-Hasenfarbig / Satin-Havanna / Satin-Lux / Satin-Rhönfarbig / Satin-Rot / Satin-Schwarz / Satin-Siamesen / Satin-Thüringer
+Rabbit,Papillon / Géant Papillon / Petit Papillon / Papillon anglais / Papillon français / Papillon rhénan
+Rabbit,Chamois / Fauve de Bourgogne / Fulva di Borgogna / Focata / Rossa della Nuova Zelanda / Rote Neuseeländer
+Rabbit,Castor / Castorex / Castor-Rexe / Cincillà Grande / Cincillà Piccolo
+Rabbit,Havana / Havanna / Havane / Havana français
+Rabbit,Lièvre / Belgian Hare / Lièvre belge
+Rabbit,Deutsche Großsilber / Deutsche Kleinwidder / Deutsche Riesen / Deutsche Riesenschecken / Helle Großsilber / Große Marderkaninchen / Großchinchilla
+Rabbit,Kleinsilber / Blau / Gelb / Graubraun / Havanna / Hell / Schwarz
+Rabbit,Marburger / Feh-Rexe / Perlfeh / Fata di Marburgo / Feh de Marbourg
+Rabbit,Marderkaninchen / Marder-Rexe / Blaugraue Rexe / Blaugraue Wiener
+Rabbit,Englische Schecken / Mecklenburger Schecke / Rheinische Schecken / Dreifarben-Schecken-Rexe / Zwergschecken / Tacheté de Mecklenbourg
+Rabbit,Hermelin / Ermellino / Hermine / Hermine de Lutterbach
+Rabbit,Japanese / Japonais / Japanner / Giapponese / Chookjin / Changnyeong tokki
+Rabbit,Laiwu black / Yunnan piebald / Zika / Saibei / Jiuyishan / Jirong / Hyplus / Hyla / FuJian white / Fujian Yellow / Chuanbai rex / Wanzai / Yufeng yellow / Wannan yellow / Sichuan White / Kalifornier / New Zealand White / New Zealand Red / Californian
+Rabbit,"Miscellaneous localized/indigenous breeds: Baladi Egyptian Black / Baladi Egyptian Red / Gabali Egyptian / Conejo Antiguo Pardo Español / Conejo Gigante de España / Indigenous Rabbit / Lapin locale / Local breeds of Europe, Asia, Africa"
+Rabbit,Hybrid & experimental lines: HYPLUS GP25 / HYPLUS PS 119 / HYPLUS PS 40 / HYPLUS PS 59 / HYLA NGPC / HYCOLE Lignée Colorée / HYCOLE medium / GP C HYCOLE / GP D HYCOLE / HYPHARM GP OPTIMA / HYPHARM HY07
+Sheep,Merino
+Sheep,Texel
+Sheep,Suffolk
+Sheep,Romney
+Sheep,Dorset
+Sheep,Karakul
+Sheep,Awassi
+Sheep,East Friesian
+Sheep,Ile-de-France
+Sheep,Barbados Blackbelly
+Sheep,Border Leicester
+Sheep,Corriedale
+Sheep,Dorper
+Sheep,Lincoln
+Sheep,Manchega
+Sheep,Romney Marsh
+Sheep,Scottish Blackface
+Sheep,Southdown
+Sheep,Hampshire
+Sheep,Poll Dorset
+Sheep,Polwarth
+Sheep,Rambouillet
+Sheep,Cheviot
+Sheep,Columbia
+Sheep,Cotswold
+Sheep,Jacob
+Sheep,Karakachan
+Sheep,Cambridge
+Sheep,Beltex
+Sheep,Bluefaced Leicester
+Sheep,British Milksheep
+Sheep,Finnsheep
+Sheep,Icelandic
+Sheep,Lincoln Longwool
+Sheep,Montadale
+Sheep,Navajo-Churro
+Sheep,Oxford
+Sheep,South African Meat Merino
+Sheep,Soay
+Sheep,Tunis
+Sheep,Wensleydale
+Sheep,Zwartbles
+Sheep,Altay
+Sheep,Bashibai
+Sheep,Bashkir Curly-haired
+Sheep,Bayinbuluke
+Sheep,Chinese Merino
+Sheep,Fat-tailed Han
+Sheep,Gansu Alpine Finewool
+Sheep,Hulun Buir Merino
+Sheep,Inner Mongolia Merino
+Sheep,Kazakh Fat-Rumped
+Sheep,Keerqin Merino
+Sheep,Mongolian
+Sheep,Oula
+Sheep,Qinghai Semi-Finewool
+Sheep,Small Tailed Han
+Sheep,Subo Merino
+Sheep,Tibetan
+Sheep,Ujumqin
+Sheep,Djallonké
+Sheep,Criollo
+Sheep,Pelibuey
+Sheep,Blackhead Persian
+Sheep,Tswana
+Sheep,British Milk Sheep
+Sheep,Canadian Arcott
+Sheep,Canadian Corriedale
+Sheep,Rabo Largo
+Sheep,Santa Inés
+Sheep,Jakar
+Sheep,Sipsu
+Sheep,Blackface
+Sheep,Colbred
+Sheep,Devon & Cornwall Longwool
+Sheep,Easy Care
+Sheep,Exlana
+Sheep,Galway
+Sheep,Hebridean
+Sheep,Lleyn
+Sheep,Lonk
+Sheep,Manx Loaghtan
+Sheep,Norfolk Horn
+Sheep,Portland
+Sheep,Prolific
+Sheep,Ryeland
+Sheep,Shetland
+Sheep,South Devon
+Sheep,South Wales Mountain
+Sheep,Teeswater
+Sheep,Welsh Mountain
+Sheep,Whitefaced Woodland
+Sheep,Georgian Fat-Tailed Finewool
+Sheep,Svaneti
+Sheep,Nungua Blackhead
+Sheep,Agriniou
+Sheep,Boutsiko
+Sheep,Florina
+Sheep,Frizarta
+Sheep,Karagouniko
+Sheep,Karystou
+Sheep,Katafygiou
+Sheep,Kefallinias
+Sheep,Lesvos
+Sheep,Sarakatsaniko
+Sheep,Thraki
+Sheep,Vlahiko
+Sheep,Dalmatian Pramenka
+Sheep,Istrian Sheep
+Sheep,Romanov Sheep
+Sheep,Ruda Sheep
+Sheep,Tsigai
+Sheep,British Dairy Sheep
+Sheep,Cikta
+Sheep,Fehér Dorper
+Sheep,German Black-Head Mutton
+Sheep,Gyimesi Racka
+Sheep,Hortobágyi Racka
+Sheep,Merinos Transilvanean
+Sheep,Ostfriesian
+Sheep,Palas Meat
+Sheep,Palas Milk
+Sheep,Agul
+Sheep,Altaiskaya
+Sheep,Andiiskaya
+Sheep,Artluhskij Merinos
+Sheep,Askanian Corriedale
+Sheep,Avar
+Sheep,Buryatskaya
+Sheep,Caucasian Mountain
+Sheep,Chernozemel'skij Merinos
+Sheep,Gissar
+Sheep,Gornyi Merino
+Sheep,Kalmyckaya
+Sheep,Karachaevskaya
+Sheep,Kavkazskaya
+Sheep,Kyrgyz Coarse-haired
+Sheep,Sovetskii Merinos
+Sheep,Tuvinskaya Short-Fat-Tail
+Sheep,Van Rooy
+Sheep,Veldmaster
+Sheep,Boeroola
+Snail,African Snail
+Snail,Giant African Snail
+Snail,Ghanaian Snail
+Snail,Tiger African Snail
+Snail,West African Snail
+Snail,Roman Snail
+Snail,Garden Snail
+Snail,Petit-Gris Snail
+Snail,Escargot Snail
+Turkey,White Giant
+Turkey,Black
+Turkey,Bourbon Red
+Turkey,Bronze
+Turkey,Buff
+Turkey,King Island
+Turkey,Narragansett
+Turkey,Royal Palm
+Turkey,Slate
+Turkey,White
+Turkey,Rode Ardenner
+Turkey,Ronquières
+Turkey,Egg-Laying Light Line
+Turkey,Heavy Meat-production Line
+Turkey,North Caucasian Bronze
+Turkey,Nova Zagora
+Turkey,Beltsville Small White
+Turkey,Broad Breasted Bronze
+Turkey,Norfolk Black
+Turkey,Ridley Bronze
+Turkey,Spanish
+Turkey,Standard Bronze
+Turkey,Nicholas
+Turkey,Dindon du Cameroun
+Turkey,Amerikanische Narragansett
+Turkey,Bronze Turkey
+Turkey,Cröllwitzer
+Turkey,Deutsche Turkey
+Turkey,Euganeische Turkey
+Turkey,Pavo
+Turkey,Indiot Mallorqui
+Turkey,Pavo Negro Extremeño
+Turkey,Hidon
+Turkey,Pronssikalkkuna
+Turkey,Dindon Noir de Sologne
+Turkey,Dindon Noir du Bourbonnais
+Turkey,Dindon Rouge des Ardennes
+Turkey,Landais
+Turkey,Beltsville
+Turkey,British Blue
+Turkey,British White
+Turkey,Broad Breasted White
+Turkey,Cornish Palm
+Turkey,Crolwitzer Pied
+Turkey,Holland
+Turkey,Nebraska Spotted
+Turkey,Norfolk Bronze
+Turkey,Ronquieres
+Turkey,Local Ghanaian
+Turkey,Zagorje
+Turkey,BUT 9
+Turkey,BUT Big 6
+Turkey,Bronzpulyka
+Turkey,Hybrid Euro FP
+Turkey,Rézpulyka
+Turkey,BUT 8
+Turkey,B U T (British United Turkeys Ltd)
+Turkey,Brianzolo
+Turkey,Bronzato dei Colli Euganei
+Turkey,Castano Precoce
+Turkey,Nero d'Italia
+Turkey,Romagnolo
+Turkey,Tacchino di Parma e Piacenza
+Turkey,Bronzato Comune
+Turkey,Ermellinato
+Turkey,Domestic Turkey
+Turkey,Monn Barain
+Turkey,Holland White
+Turkey,Mammoth Bronze
+Turkey,Kai Ngouang
+Turkey,Moroccan Beldi
+Turkey,Titri
+Turkey,Philippine Native
+Turkey,Peru Preto Português
+Turkey,Ingalukhuni
+Turkey,Local Turkey of Mandelia
+Turkey,Dinde Locale
+Turkey,BUT-8 White Breasted
+Turkey,Kharkiv-56
+Turkey,Line 5
+Turkey,Line 6
+Turkey,White Wide-breasted
+Turkey,Auburn
+Turkey,Blue Palm
+Turkey,Bronze-Breasted
+Turkey,Bronze-Standard
+Turkey,Calico
+Turkey,Chocolate
+Turkey,Jersey Buff
+Turkey,Lilac
+Turkey,Silver Auburn
+Turkey,Slate Blue
+Turkey,Slate Red
+Turkey,White BB
+Turkey,White Holland
+Turkey,White Midget
+Turkey,Tay
+Turkey,Turkey
+Vicuña,Argentinian Vicuña
+Vicuña,Chilian Vicuñna
+Vicuña,Llamingos
+Yak,Eastern Yak
+Yak,Western Yak
+Yak,Changthangi / Pashmina Yak
+Yak,Gannan Yak
+Yak,Ladakhi Yak
+Yak,Maiwa Yak
+Yak,Muli Yak
+Yak,Niangya Yak
+Yak,Pali Yak
+Yak,Pamir Yak
+Yak,Qinghai Plateau Yak
+Yak,Sibu Yak
+Yak,Tianzhu White Yak
+Yak,Tibetan High Mountain Yak
+Yak,Xinjiang Yak
+Yak,Xueduo Yak
+Yak,Yushu Yak
+Yak,Zhogdian Yak
+Yak,Arunachali Yak
+Yak,Chour-gau Yak
+Yak,Kyrgyz Yak
+Yak,Mongolian Yak
+Yak,Wild Yak
+Yak,Xueduo
+Yak,Yushu
+Yak,Zhogdian
+Yak,ARUNACHALI
+Yak,Chour-gau
+Yak,Kyrgyz yaks
+Yak,Mongolian Yak
