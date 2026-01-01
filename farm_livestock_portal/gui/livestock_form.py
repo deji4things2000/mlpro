@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
-from services.db_service import insert_livestock_extended
+from services.db_service import insert_livestock_extended, get_livestock_by_id, update_livestock_extended
 import random
 import string
 import os
@@ -127,9 +127,10 @@ def open_livestock_form(parent, refresh_callback):
     age_entry.pack(fill="x", padx=20)
 
     tk.Label(window, text="Health Status", font=font_style).pack(pady=5)
-    health_var = tk.StringVar()
-    health_entry = tk.Entry(window, textvariable=health_var, font=font_style)
-    health_entry.pack(fill="x", padx=20)
+    health_options = ["Healthy", "Sick", "Recovering", "Injured", "Under Treatment", "Unknown"]
+    health_var = tk.StringVar(value="Healthy")
+    health_dropdown = ttk.Combobox(window, textvariable=health_var, values=health_options, state="readonly", font=font_style)
+    health_dropdown.pack(fill="x", padx=20)
 
     tk.Label(window, text="Purchase Date", font=font_style).pack(pady=5)
     date_entry = DateEntry(window, date_pattern='yyyy-mm-dd', font=font_style)
@@ -175,25 +176,37 @@ def open_livestock_form(parent, refresh_callback):
             try:
                 preview = tk.Toplevel(window)
                 preview.title(f"Barcode: {tag_var.get()}")
-                preview.geometry("420x200")
                 img = Image.open(barcode_path)
+                # Barcodes are wide; limit height while allowing width
+                try:
+                    img.thumbnail((800, 300), Image.LANCZOS)
+                except Exception:
+                    img.thumbnail((800, 300))
                 photo = ImageTk.PhotoImage(img)
                 # Keep a reference to avoid garbage collection
                 preview.img_ref = photo
                 lbl = ttk.Label(preview, image=photo)
                 lbl.pack(padx=10, pady=10)
+                preview.geometry(f"{img.width + 40}x{img.height + 80}")
+                preview.resizable(True, True)
             except Exception:
                 pass
             # Preview the generated QR code
             try:
                 qr_prev = tk.Toplevel(window)
                 qr_prev.title(f"QR: {tag_var.get()}")
-                qr_prev.geometry("420x420")
                 qimg = Image.open(qr_path)
+                # QR codes are square; cap at 600x600
+                try:
+                    qimg.thumbnail((600, 600), Image.LANCZOS)
+                except Exception:
+                    qimg.thumbnail((600, 600))
                 qphoto = ImageTk.PhotoImage(qimg)
                 qr_prev.img_ref = qphoto
                 qlbl = ttk.Label(qr_prev, image=qphoto)
                 qlbl.pack(padx=10, pady=10)
+                qr_prev.geometry(f"{qimg.width + 40}x{qimg.height + 80}")
+                qr_prev.resizable(True, True)
             except Exception:
                 pass
             refresh_callback()
@@ -204,4 +217,114 @@ def open_livestock_form(parent, refresh_callback):
             messagebox.showerror("Error", f"Failed to save: {e}")
 
     save_button = tk.Button(window, text="Save Livestock", command=save, font=font_style, bg="#4CAF50", fg="white")
+    save_button.pack(pady=15, ipadx=10, ipady=5)
+
+
+def open_edit_livestock_form(parent, refresh_callback, livestock_id):
+    window = tk.Toplevel(parent)
+    window.title("Edit Livestock")
+    window.geometry("700x800")
+    window.resizable(True, True)
+
+    font_style = ("Helvetica", 11)
+
+    record = get_livestock_by_id(livestock_id)
+    if not record:
+        messagebox.showerror("Error", "Could not load selected record")
+        window.destroy()
+        return
+    # record: (id, tag, species, breed, age, health, purchase_date, livestock_type, color)
+    _, tag_val, species_val, breed_val, age_val, health_val, purchase_date_val, livestock_type_val, color_val = record
+
+    tk.Label(window, text="Animal Tag", font=font_style).pack(pady=5)
+    tag_var = tk.StringVar(value=tag_val)
+    tag_entry = tk.Entry(window, textvariable=tag_var, font=font_style, state="readonly")
+    tag_entry.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Species", font=font_style).pack(pady=5)
+    type_var = tk.StringVar(value=species_val)
+    type_dropdown = ttk.Combobox(window, textvariable=type_var, values=list(LIVESTOCK_BREEDS.keys()), state="readonly", font=font_style)
+    type_dropdown.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Breed", font=font_style).pack(pady=5)
+    breeds_list = LIVESTOCK_BREEDS.get(species_val, [])
+    breed_var = tk.StringVar(value=(breed_val or (breeds_list[0] if breeds_list else "")))
+    breed_dropdown = ttk.Combobox(window, textvariable=breed_var, values=breeds_list, state="readonly", font=font_style)
+    breed_dropdown.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Livestock Type", font=font_style).pack(pady=5)
+    type_options = ["Dairy", "Beef", "Breeding", "Draft", "Layer", "Broiler", "Wool", "Pack", "Companion"]
+    livestock_type_var = tk.StringVar(value=(livestock_type_val or ""))
+    livestock_type_dropdown = ttk.Combobox(window, textvariable=livestock_type_var, values=type_options, font=font_style)
+    livestock_type_dropdown.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Color", font=font_style).pack(pady=5)
+    color_options = ["Black", "White", "Brown", "Red", "Grey", "Tan", "Gold", "Speckled"]
+    color_var = tk.StringVar(value=(color_val or ""))
+    color_dropdown = ttk.Combobox(window, textvariable=color_var, values=color_options, font=font_style)
+    color_dropdown.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Age (years)", font=font_style).pack(pady=5)
+    age_var = tk.StringVar(value=str(age_val or ""))
+    age_entry = tk.Entry(window, textvariable=age_var, font=font_style)
+    age_entry.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Health Status", font=font_style).pack(pady=5)
+    health_options = ["Healthy", "Sick", "Recovering", "Injured", "Under Treatment", "Unknown"]
+    health_var = tk.StringVar(value=(health_val or "Healthy"))
+    health_dropdown = ttk.Combobox(window, textvariable=health_var, values=health_options, state="readonly", font=font_style)
+    health_dropdown.pack(fill="x", padx=20)
+
+    tk.Label(window, text="Purchase Date", font=font_style).pack(pady=5)
+    date_entry = DateEntry(window, date_pattern='yyyy-mm-dd', font=font_style)
+    try:
+        if purchase_date_val:
+            date_entry.set_date(purchase_date_val)
+    except Exception:
+        pass
+    date_entry.pack(fill="x", padx=20)
+
+    def on_type_change(event):
+        selected_type = type_var.get()
+        breeds = LIVESTOCK_BREEDS.get(selected_type, [])
+        breed_dropdown['values'] = breeds
+        if breeds:
+            # Keep existing breed if valid, else set first
+            if breed_var.get() not in breeds:
+                breed_var.set(breeds[0])
+        else:
+            breed_var.set("")
+
+    type_dropdown.bind("<<ComboboxSelected>>", on_type_change)
+
+    def save():
+        try:
+            age = int(age_var.get()) if (age_var.get() or "").strip() != "" else None
+            selected_species = type_var.get()
+            selected_breed = breed_var.get()
+            valid_breeds = LIVESTOCK_BREEDS.get(selected_species, [])
+            if selected_breed and selected_breed not in valid_breeds:
+                messagebox.showerror("Error", "Selected breed is not valid for the chosen species.")
+                return
+            data_ext = (
+                tag_var.get(),
+                selected_species,
+                selected_breed,
+                age,
+                health_var.get(),
+                date_entry.get_date(),
+                livestock_type_var.get(),
+                color_var.get(),
+                livestock_id,
+            )
+            update_livestock_extended(data_ext)
+            messagebox.showinfo("Success", "Livestock updated successfully!")
+            refresh_callback()
+            window.destroy()
+        except ValueError:
+            messagebox.showerror("Error", "Age must be a number")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update: {e}")
+
+    save_button = tk.Button(window, text="Save Changes", command=save, font=font_style, bg="#1976D2", fg="white")
     save_button.pack(pady=15, ipadx=10, ipady=5)

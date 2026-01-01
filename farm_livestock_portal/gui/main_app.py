@@ -3,7 +3,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from services.db_service import fetch_all_livestock, delete_livestock_by_id
-from gui.livestock_form import open_livestock_form, generate_barcode, generate_qr
+from gui.livestock_form import open_livestock_form, open_edit_livestock_form, generate_barcode, generate_qr
+from gui.health_records import open_health_records
 import os
 from PIL import Image, ImageTk
 
@@ -79,8 +80,14 @@ class FarmApp:
         preview_qr_button = ttk.Button(button_frame, text="Preview QR", command=self.preview_selected_qr)
         preview_qr_button.pack(side="left", padx=5)
 
+        health_button = ttk.Button(button_frame, text="Health Records", command=lambda: open_health_records(self.root, self.refresh_table))
+        health_button.pack(side="left", padx=5)
+
         delete_button = ttk.Button(button_frame, text="Delete Selected", command=self.delete_selected)
         delete_button.pack(side="left", padx=5)
+
+        edit_button = ttk.Button(button_frame, text="Edit Selected", command=self.edit_selected)
+        edit_button.pack(side="left", padx=5)
 
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
@@ -178,12 +185,20 @@ class FarmApp:
     def preview_image(self, image_path, title="Preview"):
         win = tk.Toplevel(self.root)
         win.title(title)
-        win.geometry("500x300")
         img = Image.open(image_path)
+        # Scale image to fit a reasonable window while preserving aspect ratio
+        max_dim = 800
+        try:
+            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+        except Exception:
+            img.thumbnail((max_dim, max_dim))
         photo = ImageTk.PhotoImage(img)
         win.img_ref = photo
         lbl = ttk.Label(win, image=photo)
         lbl.pack(padx=10, pady=10)
+        # Size window to image dimensions with padding
+        win.geometry(f"{img.width + 40}x{img.height + 80}")
+        win.resizable(True, True)
 
     def preview_selected_barcode(self):
         selected = self.tree.selection()
@@ -231,6 +246,22 @@ class FarmApp:
             messagebox.showerror("Delete", f"Completed with {errors} error(s).")
         else:
             messagebox.showinfo("Delete", "Selected record(s) deleted.")
+
+    def edit_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Warning", "Select a record to edit")
+            return
+        if len(selected) > 1:
+            messagebox.showwarning("Warning", "Please select only one record to edit")
+            return
+        values = self.tree.item(selected[0], "values")
+        try:
+            livestock_id = int(values[0])
+        except Exception:
+            messagebox.showerror("Error", "Invalid selection")
+            return
+        open_edit_livestock_form(self.root, self.refresh_table, livestock_id)
 
 if __name__ == "__main__":
     os.makedirs(BARCODE_DIR, exist_ok=True)
