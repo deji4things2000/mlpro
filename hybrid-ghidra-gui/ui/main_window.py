@@ -8,6 +8,9 @@ from .disassembly_view import DisassemblyView
 from .llm_analysis import LLMAnalysisView
 
 from core import cfg_builder, llm_analyzer, ghidra_bridge
+from core.disassembler import get_preview
+from utils.file_utils import read_json
+from pathlib import Path
 
 
 class MainWindow(QMainWindow):
@@ -19,6 +22,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Hybrid Ghidra Python GUI')
         self.setGeometry(100, 100, 1400, 900)
         self.current_binary: str | None = None
+        # Load config
+        cfg_path = Path(__file__).resolve().parents[1] / "config.json"
+        try:
+            self.config = read_json(cfg_path)
+        except Exception:
+            self.config = {"ghidra": {"use_bridge": False}, "llm": {"provider": "local", "model": "placeholder", "api_key": ""}}
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -99,8 +108,23 @@ class MainWindow(QMainWindow):
     def on_function_selected(self, item, column):
         function_name = item.text(0)
         self.status_bar.showMessage(f"Selected function: {function_name}")
-
-        result = llm_analyzer.analyze_function(function_name)
+        asm = ""
+        decomp = ""
+        if self.config.get("ghidra", {}).get("use_bridge") and ghidra_bridge.is_available():
+            asm = ghidra_bridge.get_disassembly(function_name)
+            decomp = ghidra_bridge.get_decompiled(function_name)
+            if asm:
+                self.disassembly_view.set_assembly_text(asm)
+            if decomp:
+                self.disassembly_view.set_decompiled_text(decomp)
+        result = llm_analyzer.analyze_function(
+            function_name,
+            assembly=asm,
+            decompiled=decomp,
+            provider=self.config.get("llm", {}).get("provider", "local"),
+            model=self.config.get("llm", {}).get("model", "placeholder"),
+            api_key=self.config.get("llm", {}).get("api_key") or None,
+        )
         self.llm_analysis_view.update_analysis(
             result.get("summary", "No summary"),
             result.get("prediction", "UNKNOWN"),
@@ -109,14 +133,25 @@ class MainWindow(QMainWindow):
 
     def build_cfg(self):
         self.status_bar.showMessage("Building Control Flow Graph...")
-        graph_text = cfg_builder.build_cfg()
+        item = self.binary_explorer.functions_tree.currentItem()
+        function_name = item.text(0) if item else "main"
+        graph_text = cfg_builder.build_cfg(function_name=function_name)
         self.llm_analysis_view.cfg_text.setPlainText(graph_text)
 
     def run_llm_analysis(self):
         self.status_bar.showMessage("Running LLM Analysis...")
         item = self.binary_explorer.functions_tree.currentItem()
         function_name = item.text(0) if item else "main"
-        result = llm_analyzer.analyze_function(function_name)
+        asm = self.disassembly_view.asm_text.toPlainText()
+        decomp = self.disassembly_view.decomp_text.toPlainText()
+        result = llm_analyzer.analyze_function(
+            function_name,
+            assembly=asm,
+            decompiled=decomp,
+            provider=self.config.get("llm", {}).get("provider", "local"),
+            model=self.config.get("llm", {}).get("model", "placeholder"),
+            api_key=self.config.get("llm", {}).get("api_key") or None,
+        )
         self.llm_analysis_view.update_analysis(
             result.get("summary", "No summary"),
             result.get("prediction", "UNKNOWN"),
@@ -127,7 +162,9 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Annotating in Ghidra...")
         item = self.binary_explorer.functions_tree.currentItem()
         function_name = item.text(0) if item else "main"
-        success = ghidra_bridge.annotate(function_name, note="Annotated by Hybrid GUI")
+        success = False
+        if self.config.get("ghidra", {}).get("use_bridge") and ghidra_bridge.is_available():
+            success = ghidra_bridge.annotate(function_name, note="Annotated by Hybrid GUI")
         if success:
             self.status_bar.showMessage("Annotation complete")
         else:
@@ -136,18 +173,24 @@ class MainWindow(QMainWindow):
     def on_binary_loaded(self, path: str):
         self.current_binary = path
         self.status_bar.showMessage(f"Loaded: {path}")
-        # Update views with basic placeholders tied to the binary path
-        self.disassembly_view.show_loaded_binary(path)
-        self.llm_analysis_view.reset_for_binary(path)
-        # Populate functions with a path-derived sample for immediate UX feedback
-        base = path.split('/')[-1]
-        sample_funcs = [
-            (f"start_{base}", "0x401000", "Low"),
-            (f"main_{base}", "0x401234", "Medium"),
-            (f"parse_input_{base}", "0x401567", "High"),
-        ]
-        self.binary_explorer.set_functions(sample_funcs)
-        # Auto-select first function to show analysis immediately
+        # If configured and available, open in Ghidra and fetch functions
+        used_bridge = False
+        if self.config.get("ghidra", {}).get("use_bridge") and ghidra_bridge.is_available():
+            used_bridge = ghidra_bridge.open_program(path)
+        if used_bridge:
+            funcs = ghidra_bridge.list_functions()
+            if funcs:
+                self.binary_explorer.set_functions(funcs)
+        else:
+            # Fallback: disassemble locally and set functions/preview
+            asm, funcs = get_preview(path)
+            self.binary_explorer.set_functions(funcs)
+            self.disassembly_view.set_assembly_text(f"; Disassembly (local preview)\n{asm}")
+            self.disassembly_view.set_decompiled_text(
+                "// Decompiled preview requires Ghidra Bridge or analyzer integration."
+            )
+            self.llm_analysis_view.reset_for_binary(path)
+        # Auto-select first function
         first = self.binary_explorer.functions_tree.topLevelItem(0)
         if first:
             self.binary_explorer.functions_tree.setCurrentItem(first)

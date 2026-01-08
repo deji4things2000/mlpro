@@ -1,3 +1,5 @@
 PyQt5>=5.15.9
 ghidra_bridge>=0.3.0
 openai>=1.0.0
+capstone>=5.0.0
+pefile>=2023.2.7
