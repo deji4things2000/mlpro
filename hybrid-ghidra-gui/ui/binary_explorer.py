@@ -1,12 +1,14 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QGroupBox, QPushButton, QLabel,
-    QTreeWidget, QTreeWidgetItem, QCheckBox
+    QTreeWidget, QTreeWidgetItem, QCheckBox, QFileDialog
 )
 from PyQt5.QtCore import pyqtSignal
+import os
 
 
 class BinaryExplorer(QWidget):
     status_message = pyqtSignal(str)
+    binary_loaded = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -34,17 +36,13 @@ class BinaryExplorer(QWidget):
         self.functions_tree = QTreeWidget()
         self.functions_tree.setHeaderLabels(["Function", "Address", "Risk Level"])
 
-        sample_functions = [
+        self._populate_functions([
             ("start", "0x401000", "Low"),
             ("main", "0x401234", "Medium"),
             ("sub_401234", "0x401234", "High"),
             ("parse_input", "0x401567", "High"),
             ("check_auth", "0x401600", "Medium"),
-        ]
-
-        for func, addr, risk in sample_functions:
-            item = QTreeWidgetItem([func, addr, risk])
-            self.functions_tree.addTopLevelItem(item)
+        ])
 
         functions_layout.addWidget(self.functions_tree)
         functions_group.setLayout(functions_layout)
@@ -71,5 +69,18 @@ class BinaryExplorer(QWidget):
         self.setLayout(layout)
 
     def load_binary(self):
-        self.binary_path_label.setText("/path/to/binary.exe")
-        self.status_message.emit("Binary loaded successfully")
+        start_dir = os.path.expanduser("~")
+        filters = "Executables (*.exe *.dll);;All Files (*)"
+        path, _ = QFileDialog.getOpenFileName(self, "Select Binary", start_dir, filters)
+        if path:
+            self.binary_path_label.setText(path)
+            self.status_message.emit("Binary loaded successfully")
+            self.binary_loaded.emit(path)
+
+    def _populate_functions(self, items: list[tuple[str, str, str]]) -> None:
+        self.functions_tree.clear()
+        for func, addr, risk in items:
+            self.functions_tree.addTopLevelItem(QTreeWidgetItem([func, addr, risk]))
+
+    def set_functions(self, items: list[tuple[str, str, str]]) -> None:
+        self._populate_functions(items)

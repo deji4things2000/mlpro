@@ -71,3 +71,14 @@ class LLMAnalysisView(QWidget):
         self.summary_label.setText(f"<b>Summary:</b> {summary}")
         self.prediction_label.setText(f"<b>Prediction:</b> {prediction}")
         self.fix_label.setText(f"<b>Suggested Fix:</b> {fix}")
+
+    def reset_for_binary(self, path: str) -> None:
+        self.update_analysis(
+            summary=f"Binary loaded: {path}",
+            prediction="N/A",
+            fix="Select a function or run analysis",
+        )
+        # Reset CFG text to a default prompt
+        self.cfg_text.setPlainText(
+            "(CFG will appear here after building)"
+        )

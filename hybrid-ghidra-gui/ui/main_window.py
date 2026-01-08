@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle('Hybrid Ghidra Python GUI')
         self.setGeometry(100, 100, 1400, 900)
+        self.current_binary: str | None = None
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -46,6 +47,7 @@ class MainWindow(QMainWindow):
         self.llm_analysis_view.run_llm_btn.clicked.connect(self.run_llm_analysis)
         self.llm_analysis_view.annotate_btn.clicked.connect(self.annotate_in_ghidra)
         self.binary_explorer.status_message.connect(self.status_bar.showMessage)
+        self.binary_explorer.binary_loaded.connect(self.on_binary_loaded)
 
         self.setStyleSheet(
             """
@@ -130,3 +132,23 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("Annotation complete")
         else:
             self.status_bar.showMessage("Annotation failed")
+
+    def on_binary_loaded(self, path: str):
+        self.current_binary = path
+        self.status_bar.showMessage(f"Loaded: {path}")
+        # Update views with basic placeholders tied to the binary path
+        self.disassembly_view.show_loaded_binary(path)
+        self.llm_analysis_view.reset_for_binary(path)
+        # Populate functions with a path-derived sample for immediate UX feedback
+        base = path.split('/')[-1]
+        sample_funcs = [
+            (f"start_{base}", "0x401000", "Low"),
+            (f"main_{base}", "0x401234", "Medium"),
+            (f"parse_input_{base}", "0x401567", "High"),
+        ]
+        self.binary_explorer.set_functions(sample_funcs)
+        # Auto-select first function to show analysis immediately
+        first = self.binary_explorer.functions_tree.topLevelItem(0)
+        if first:
+            self.binary_explorer.functions_tree.setCurrentItem(first)
+            self.on_function_selected(first, 0)

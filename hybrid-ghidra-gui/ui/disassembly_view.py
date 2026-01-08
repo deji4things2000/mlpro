@@ -56,3 +56,18 @@ class DisassemblyView(QWidget):
         layout.addWidget(decomp_group)
 
         self.setLayout(layout)
+
+    def set_assembly_text(self, text: str) -> None:
+        self.asm_text.setPlainText(text)
+
+    def set_decompiled_text(self, text: str) -> None:
+        self.decomp_text.setPlainText(text)
+
+    def show_loaded_binary(self, path: str) -> None:
+        self.set_assembly_text(
+            f"; Loaded binary: {path}\n; Disassembly preview is placeholder until integration"
+        )
+        self.set_decompiled_text(
+            "// Decompiled preview not available without analyzer.\n"
+            "// Use Run LLM Analysis or integrate Ghidra Bridge."
+        )
