@@ -1,0 +1,6 @@
+{
+  "theme": "light",
+  "ghidra_host": "localhost",
+  "ghidra_port": 18001,
+  "enable_llm": false
+}
