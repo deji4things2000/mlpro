@@ -1,0 +1,13 @@
+{
+  "theme": "dark",
+  "ghidra": {
+    "host": "localhost",
+    "port": 18001,
+    "use_bridge": false
+  },
+  "llm": {
+    "provider": "local",
+    "model": "placeholder",
+    "api_key": ""
+  }
+}
