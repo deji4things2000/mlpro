@@ -1,16 +1,20 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QTextEdit
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QTextEdit, QPushButton, QSplitter
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt, pyqtSignal
 
 from .syntax_highlighter import Highlighter
 
 
 class DisassemblyView(QWidget):
+    convert_to_python_requested = pyqtSignal()
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
+        splitter = QSplitter()
+        splitter.setOrientation(Qt.Vertical)
 
         asm_group = QGroupBox("Assembly")
         asm_layout = QVBoxLayout()
@@ -32,7 +36,7 @@ class DisassemblyView(QWidget):
         self.asm_text.setPlainText(sample_asm)
         asm_layout.addWidget(self.asm_text)
         asm_group.setLayout(asm_layout)
-        layout.addWidget(asm_group)
+        splitter.addWidget(asm_group)
 
         decomp_group = QGroupBox("Decompiled Code")
         decomp_layout = QVBoxLayout()
@@ -52,9 +56,13 @@ class DisassemblyView(QWidget):
 
         self.decomp_text.setPlainText(sample_decomp)
         decomp_layout.addWidget(self.decomp_text)
+        self.convert_py_btn = QPushButton("Convert to Python")
+        self.convert_py_btn.clicked.connect(self.convert_to_python_requested.emit)
+        decomp_layout.addWidget(self.convert_py_btn)
         decomp_group.setLayout(decomp_layout)
-        layout.addWidget(decomp_group)
-
+        splitter.addWidget(decomp_group)
+        splitter.setSizes([300, 500])
+        layout.addWidget(splitter)
         self.setLayout(layout)
 
     def set_assembly_text(self, text: str) -> None:
