@@ -3,7 +3,7 @@
   "ghidra": {
     "host": "127.0.0.1",
     "port": 18001,
-    "use_bridge": true,
+    "use_bridge": false,
     "install_dir": "/Applications/ghidra/ghidra_12.0_PUBLIC"
   },
   "llm": {

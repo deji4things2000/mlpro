@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QGroupBox, QLabel, QTextEdit, QHBoxLayout, QPushButton
+    QWidget, QVBoxLayout, QGroupBox, QLabel, QTextEdit, QSplitter
 )
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 
 
 class LLMAnalysisView(QWidget):
@@ -11,6 +12,8 @@ class LLMAnalysisView(QWidget):
 
     def initUI(self):
         layout = QVBoxLayout()
+        splitter = QSplitter()
+        splitter.setOrientation(Qt.Vertical)
 
         analysis_group = QGroupBox("LLM Analysis")
         analysis_layout = QVBoxLayout()
@@ -49,22 +52,15 @@ class LLMAnalysisView(QWidget):
         self.cfg_text.setPlainText(cfg_sample)
         cfg_layout.addWidget(self.cfg_text)
 
-        button_layout = QHBoxLayout()
-        self.build_cfg_btn = QPushButton("Build CFG")
-        self.run_llm_btn = QPushButton("Run LLM Analysis")
-        self.annotate_btn = QPushButton("Annotate in Ghidra")
-
-        button_layout.addWidget(self.build_cfg_btn)
-        button_layout.addWidget(self.run_llm_btn)
-        button_layout.addWidget(self.annotate_btn)
-        cfg_layout.addLayout(button_layout)
-
         cfg_group.setLayout(cfg_layout)
 
-        layout.addWidget(analysis_group)
-        layout.addWidget(cfg_group)
-
         analysis_group.setLayout(analysis_layout)
+        cfg_group.setLayout(cfg_layout)
+
+        splitter.addWidget(analysis_group)
+        splitter.addWidget(cfg_group)
+        splitter.setSizes([200, 400])
+        layout.addWidget(splitter)
         self.setLayout(layout)
 
     def update_analysis(self, summary: str, prediction: str, fix: str):

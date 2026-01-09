@@ -1,13 +1,14 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QHBoxLayout, QSplitter, QStatusBar, QLabel, QAction
+    QMainWindow, QWidget, QHBoxLayout, QSplitter, QStatusBar, QLabel, QAction, QProgressDialog
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 
 from .binary_explorer import BinaryExplorer
 from .disassembly_view import DisassemblyView
 from .llm_analysis import LLMAnalysisView
 
 from core import cfg_builder, llm_analyzer, ghidra_bridge
+from core import local_decompiler, translator
 from core.disassembler import get_preview
 from utils.file_utils import read_json
 from pathlib import Path
@@ -45,6 +46,7 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(central_widget)
 
         splitter = QSplitter(Qt.Horizontal)
+        splitter.setChildrenCollapsible(False)
 
         self.binary_explorer = BinaryExplorer()
         splitter.addWidget(self.binary_explorer)
@@ -56,6 +58,9 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self.llm_analysis_view)
 
         splitter.setSizes([300, 500, 600])
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(2, 2)
         main_layout.addWidget(splitter)
 
         self.status_bar = QStatusBar()
@@ -86,9 +91,12 @@ class MainWindow(QMainWindow):
         bridge_menu.addAction(refresh_status_action)
 
         self.binary_explorer.functions_tree.itemClicked.connect(self.on_function_selected)
-        self.llm_analysis_view.build_cfg_btn.clicked.connect(self.build_cfg)
-        self.llm_analysis_view.run_llm_btn.clicked.connect(self.run_llm_analysis)
-        self.llm_analysis_view.annotate_btn.clicked.connect(self.annotate_in_ghidra)
+        # Obsolete CFG/LLM/Ghidra buttons removed from LLMAnalysisView
+        # Convert-to-Python button under decompiled view
+        try:
+            self.disassembly_view.convert_to_python_requested.connect(self.translate_to_python)
+        except Exception:
+            pass
         self.binary_explorer.status_message.connect(self.status_bar.showMessage)
         self.binary_explorer.binary_loaded.connect(self.on_binary_loaded)
 
@@ -140,6 +148,69 @@ class MainWindow(QMainWindow):
         )
         # Initial bridge status
         self.refresh_bridge_status()
+
+    # --- RetDec worker with progress ---
+    class RetdecWorker(QThread):
+        finished_code = pyqtSignal(str)
+        failed = pyqtSignal(str)
+
+        def __init__(self, path: str, use_cached: bool = True):
+            super().__init__()
+            self.path = path
+            self.use_cached = use_cached
+
+        def run(self):
+            try:
+                if self.use_cached:
+                    code = local_decompiler.decompile_with_retdec_cached(self.path)
+                else:
+                    code = local_decompiler.decompile_with_retdec(self.path)
+                self.finished_code.emit(code)
+            except Exception as e:
+                self.failed.emit(str(e))
+
+    def start_retdec_with_progress(self, path: str, use_cached: bool = True):
+        if not local_decompiler.is_retdec_available():
+            self.status_bar.showMessage("RetDec not found. Install via 'brew install retdec'.")
+            return
+        self.status_bar.showMessage("Decompiling with RetDec...")
+        self._retdec_cancelled = False
+        self._retdec_dialog = QProgressDialog("Decompiling with RetDec...", "Cancel", 0, 0, self)
+        self._retdec_dialog.setWindowTitle("RetDec Decompilation")
+        self._retdec_dialog.setModal(True)
+        self._retdec_dialog.canceled.connect(self._on_retdec_canceled)
+        self._retdec_dialog.show()
+
+        self._retdec_worker = MainWindow.RetdecWorker(path, use_cached)
+        self._retdec_worker.finished_code.connect(self._on_retdec_done)
+        self._retdec_worker.failed.connect(self._on_retdec_failed)
+        self._retdec_worker.start()
+
+    def _on_retdec_canceled(self):
+        self._retdec_cancelled = True
+        self.status_bar.showMessage("RetDec canceled")
+
+    def _on_retdec_done(self, code: str):
+        try:
+            if not getattr(self, "_retdec_cancelled", False):
+                self.disassembly_view.set_decompiled_text(code)
+                self.status_bar.showMessage("RetDec decompilation complete")
+        finally:
+            dlg = getattr(self, "_retdec_dialog", None)
+            if dlg:
+                dlg.close()
+
+    def _on_retdec_failed(self, msg: str):
+        try:
+            if not getattr(self, "_retdec_cancelled", False):
+                self.disassembly_view.set_decompiled_text(
+                    f"// RetDec failed: {msg}\n// You can still use translation or Ghidra Bridge when available."
+                )
+                self.status_bar.showMessage(f"RetDec failed: {msg}")
+        finally:
+            dlg = getattr(self, "_retdec_dialog", None)
+            if dlg:
+                dlg.close()
 
     def on_function_selected(self, item, column):
         function_name = item.text(0)
@@ -208,6 +279,34 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("Annotation failed")
         self.refresh_bridge_status()
 
+    def decompile_with_retdec(self):
+        path = self.current_binary
+        if not path:
+            self.status_bar.showMessage("Load a binary first")
+            return
+        # Run with progress (non-cached for manual action)
+        self.start_retdec_with_progress(path, use_cached=False)
+
+    def translate_to_python(self):
+        code = self.disassembly_view.decomp_text.toPlainText()
+        if not code.strip():
+            self.status_bar.showMessage("No decompiled code to translate")
+            return
+        py = translator.to_python(code)
+        self.llm_analysis_view.update_analysis("Translated to Python", "N/A", "Review types and logic")
+        self.disassembly_view.set_decompiled_text(py)
+        self.status_bar.showMessage("Translation to Python complete")
+
+    def translate_to_cpp(self):
+        code = self.disassembly_view.decomp_text.toPlainText()
+        if not code.strip():
+            self.status_bar.showMessage("No decompiled code to translate")
+            return
+        cpp = translator.to_cpp(code)
+        self.llm_analysis_view.update_analysis("Translated to C++", "N/A", "Refine types and classes")
+        self.disassembly_view.set_decompiled_text(cpp)
+        self.status_bar.showMessage("Translation to C++ complete")
+
     def on_binary_loaded(self, path: str):
         self.current_binary = path
         self.status_bar.showMessage(f"Loaded: {path}")
@@ -226,9 +325,13 @@ class MainWindow(QMainWindow):
             asm, funcs = get_preview(path)
             self.binary_explorer.set_functions(funcs)
             self.disassembly_view.set_assembly_text(f"; Disassembly (local preview)\n{asm}")
-            self.disassembly_view.set_decompiled_text(
-                "// Decompiled preview requires Ghidra Bridge or analyzer integration."
-            )
+            # Auto-run RetDec (cached) for local C/C++ pseudocode if available
+            if local_decompiler.is_retdec_available():
+                self.start_retdec_with_progress(path, use_cached=True)
+            else:
+                self.disassembly_view.set_decompiled_text(
+                    "// RetDec not found. Install via 'brew install retdec' to enable local decompilation."
+                )
             self.llm_analysis_view.reset_for_binary(path)
         # Auto-select first function
         first = self.binary_explorer.functions_tree.topLevelItem(0)
