@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QHBoxLayout, QSplitter, QStatusBar, QLabel, QAction, QProgressDialog
+    QMainWindow, QWidget, QHBoxLayout, QSplitter, QStatusBar, QLabel, QAction, QProgressDialog,
+    QDialog, QVBoxLayout, QFormLayout, QLineEdit, QCheckBox, QComboBox, QPushButton, QMessageBox, QHBoxLayout
 )
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 
@@ -11,6 +12,7 @@ from core import cfg_builder, llm_analyzer, ghidra_bridge
 from core import local_decompiler, translator
 from core.disassembler import get_preview
 from utils.file_utils import read_json
+from utils.file_utils import write_json
 from pathlib import Path
 import sys
 import subprocess
@@ -80,6 +82,7 @@ class MainWindow(QMainWindow):
         # Bridge menu
         menu_bar = self.menuBar()
         bridge_menu = menu_bar.addMenu("Bridge")
+        self._bridge_menu = bridge_menu
         connect_bridge_action = QAction("Connect to Bridge", self)
         connect_bridge_action.triggered.connect(self.connect_bridge)
         bridge_menu.addAction(connect_bridge_action)
@@ -89,6 +92,19 @@ class MainWindow(QMainWindow):
         refresh_status_action = QAction("Refresh Status", self)
         refresh_status_action.triggered.connect(self.refresh_bridge_status)
         bridge_menu.addAction(refresh_status_action)
+
+        # Settings menu
+        settings_menu = menu_bar.addMenu("Settings")
+        prefs_action = QAction("Preferences…", self)
+        prefs_action.triggered.connect(self.open_settings)
+        settings_menu.addAction(prefs_action)
+
+        # Conditionally hide Bridge menu when bridge is disabled in config
+        if not self.config.get("ghidra", {}).get("use_bridge"):
+            try:
+                bridge_menu.menuAction().setVisible(False)
+            except Exception:
+                pass
 
         self.binary_explorer.functions_tree.itemClicked.connect(self.on_function_selected)
         # Obsolete CFG/LLM/Ghidra buttons removed from LLMAnalysisView
@@ -292,7 +308,20 @@ class MainWindow(QMainWindow):
         if not code.strip():
             self.status_bar.showMessage("No decompiled code to translate")
             return
-        py = translator.to_python(code)
+        # Try LLM translation first if configured
+        llm_cfg = self.config.get("llm", {})
+        provider = llm_cfg.get("provider", "local")
+        model = llm_cfg.get("model", "placeholder")
+        api_key = llm_cfg.get("api_key") or None
+        py = None
+        try:
+            from core import llm_analyzer as _la
+            py = _la.translate_to_python(code, provider=provider, model=model, api_key=api_key)
+        except Exception:
+            py = None
+        # Fallback to heuristic if LLM not available or failed
+        if not py:
+            py = translator.to_python(code)
         self.llm_analysis_view.update_analysis("Translated to Python", "N/A", "Review types and logic")
         self.disassembly_view.set_decompiled_text(py)
         self.status_bar.showMessage("Translation to Python complete")
@@ -401,3 +430,97 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("Reconnected to existing bridge")
         else:
             self.status_bar.showMessage("Reconnect attempted. Start bridge in Ghidra if needed.")
+
+    def _cfg_path(self) -> Path:
+        return Path(__file__).resolve().parents[1] / "config.json"
+
+    def open_settings(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Preferences")
+        layout = QVBoxLayout(dlg)
+        form = QFormLayout()
+
+        gh = self.config.get("ghidra", {})
+        llm = self.config.get("llm", {})
+
+        use_bridge_cb = QCheckBox()
+        use_bridge_cb.setChecked(bool(gh.get("use_bridge", False)))
+        host_edit = QLineEdit(str(gh.get("host", "127.0.0.1")))
+        port_edit = QLineEdit(str(gh.get("port", 18001)))
+        install_edit = QLineEdit(str(gh.get("install_dir", "/Applications/ghidra/ghidra_12.0_PUBLIC")))
+
+        provider_combo = QComboBox()
+        provider_combo.addItems(["local", "openai", "ollama"])
+        cur_provider = str(llm.get("provider", "local"))
+        idx = provider_combo.findText(cur_provider)
+        provider_combo.setCurrentIndex(idx if idx >= 0 else 0)
+        model_edit = QLineEdit(str(llm.get("model", "placeholder")))
+        api_key_edit = QLineEdit(str(llm.get("api_key", "")))
+
+        form.addRow("Use Bridge", use_bridge_cb)
+        form.addRow("Bridge Host", host_edit)
+        form.addRow("Bridge Port", port_edit)
+        form.addRow("Ghidra Install Dir", install_edit)
+        form.addRow("LLM Provider", provider_combo)
+        form.addRow("LLM Model", model_edit)
+        form.addRow("LLM API Key", api_key_edit)
+
+        layout.addLayout(form)
+        btn_box = QHBoxLayout()
+        save_btn = QPushButton("Save")
+        cancel_btn = QPushButton("Cancel")
+        btn_box.addWidget(save_btn)
+        btn_box.addWidget(cancel_btn)
+        layout.addLayout(btn_box)
+
+        def on_save():
+            try:
+                new_cfg = {
+                    "theme": self.config.get("theme", "dark"),
+                    "ghidra": {
+                        "use_bridge": use_bridge_cb.isChecked(),
+                        "host": host_edit.text().strip() or "127.0.0.1",
+                        "port": int(port_edit.text().strip() or "18001"),
+                        "install_dir": install_edit.text().strip() or "/Applications/ghidra/ghidra_12.0_PUBLIC",
+                    },
+                    "llm": {
+                        "provider": provider_combo.currentText(),
+                        "model": model_edit.text().strip() or "placeholder",
+                        "api_key": api_key_edit.text().strip(),
+                    },
+                }
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Invalid settings: {e}")
+                return
+            try:
+                write_json(self._cfg_path(), new_cfg)
+                self.apply_config_updates(new_cfg)
+                QMessageBox.information(self, "Saved", "Preferences saved.")
+                dlg.accept()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save config: {e}")
+
+        def on_cancel():
+            dlg.reject()
+
+        save_btn.clicked.connect(on_save)
+        cancel_btn.clicked.connect(on_cancel)
+        dlg.exec_()
+
+    def apply_config_updates(self, new_cfg: dict):
+        self.config = new_cfg
+        gh = self.config.get("ghidra", {})
+        # Update bridge connection
+        try:
+            ghidra_bridge.set_connection(str(gh.get("host", "127.0.0.1")), int(gh.get("port", 18001)))
+        except Exception:
+            pass
+        # Show/hide Bridge menu
+        try:
+            self._bridge_menu.menuAction().setVisible(bool(gh.get("use_bridge", False)))
+        except Exception:
+            pass
+        # Refresh status and optionally auto-populate
+        self.refresh_bridge_status()
+        if gh.get("use_bridge") and ghidra_bridge.is_available() and ghidra_bridge.has_current_program():
+            self._auto_connect_and_populate()
