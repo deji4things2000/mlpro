@@ -36,16 +36,12 @@ export GHIDRA_BRIDGE_HOST=127.0.0.1
 export GHIDRA_BRIDGE_PORT=18001
 ```
 
-## Client-Only Ghidra Bridge (Ghidra 12 + PyGhidra)
+## Client-Only Ghidra Bridge (Ghidra 12)
 
 This app connects to an existing bridge; it does not start or manage the bridge server.
 
 1) Launch Ghidra
-- Start Ghidra normally, or optionally use the helper script:
-```bash
-python hybrid-ghidra-gui/scripts/start_ghidra_bridge.py
-```
-This attempts to launch Ghidra via PyGhidra and then attaches as a client if a bridge is already running.
+- Start Ghidra using your normal workflow.
 
 2) Start the Bridge inside Ghidra
 - Enable the bridge server from within your Ghidra environment (extension or bundled script).
@@ -83,6 +79,6 @@ ls -d /Applications/ghidra/ghidra_12.0_PUBLIC
 
 ## Notes
 - The app uses `ghidra-bridge` in client mode only.
-- PyGhidra is used to assist in starting Ghidra; server lifecycle is owned by Ghidra.
+- Server lifecycle is owned by Ghidra; this app attaches as a client only.
 - LLM features are placeholders; wire them to real services under `core/` when ready.
 - Tested with PyQt5 5.15+.
