@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QHBoxLayout, QSplitter, QStatusBar
+    QMainWindow, QWidget, QHBoxLayout, QSplitter, QStatusBar, QLabel, QAction
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 from .binary_explorer import BinaryExplorer
 from .disassembly_view import DisassemblyView
@@ -11,6 +11,9 @@ from core import cfg_builder, llm_analyzer, ghidra_bridge
 from core.disassembler import get_preview
 from utils.file_utils import read_json
 from pathlib import Path
+import sys
+import subprocess
+import os
 
 
 class MainWindow(QMainWindow):
@@ -28,6 +31,14 @@ class MainWindow(QMainWindow):
             self.config = read_json(cfg_path)
         except Exception:
             self.config = {"ghidra": {"use_bridge": False}, "llm": {"provider": "local", "model": "placeholder", "api_key": ""}}
+        # Configure bridge connection if present
+        gh_cfg = self.config.get("ghidra", {})
+        host = gh_cfg.get("host", "127.0.0.1")
+        port = int(gh_cfg.get("port", 18001))
+        try:
+            ghidra_bridge.set_connection(host, port)
+        except Exception:
+            pass
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -50,6 +61,29 @@ class MainWindow(QMainWindow):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready")
+        # Bridge status indicator
+        self.bridge_status_label = QLabel("Bridge: Unknown")
+        self.status_bar.addPermanentWidget(self.bridge_status_label)
+        # Auto-refresh bridge status periodically to reflect late starts
+        self._status_timer = QTimer(self)
+        self._status_timer.setInterval(2000)
+        self._status_timer.timeout.connect(self.refresh_bridge_status)
+        self._status_timer.start()
+        # Attempt to auto-populate functions from an already running bridge
+        QTimer.singleShot(500, self._auto_connect_and_populate)
+
+        # Bridge menu
+        menu_bar = self.menuBar()
+        bridge_menu = menu_bar.addMenu("Bridge")
+        connect_bridge_action = QAction("Connect to Bridge", self)
+        connect_bridge_action.triggered.connect(self.connect_bridge)
+        bridge_menu.addAction(connect_bridge_action)
+        force_reconnect_action = QAction("Force Reconnect", self)
+        force_reconnect_action.triggered.connect(self.force_reconnect)
+        bridge_menu.addAction(force_reconnect_action)
+        refresh_status_action = QAction("Refresh Status", self)
+        refresh_status_action.triggered.connect(self.refresh_bridge_status)
+        bridge_menu.addAction(refresh_status_action)
 
         self.binary_explorer.functions_tree.itemClicked.connect(self.on_function_selected)
         self.llm_analysis_view.build_cfg_btn.clicked.connect(self.build_cfg)
@@ -104,6 +138,8 @@ class MainWindow(QMainWindow):
             }
             """
         )
+        # Initial bridge status
+        self.refresh_bridge_status()
 
     def on_function_selected(self, item, column):
         function_name = item.text(0)
@@ -137,6 +173,7 @@ class MainWindow(QMainWindow):
         function_name = item.text(0) if item else "main"
         graph_text = cfg_builder.build_cfg(function_name=function_name)
         self.llm_analysis_view.cfg_text.setPlainText(graph_text)
+        self.refresh_bridge_status()
 
     def run_llm_analysis(self):
         self.status_bar.showMessage("Running LLM Analysis...")
@@ -169,18 +206,21 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("Annotation complete")
         else:
             self.status_bar.showMessage("Annotation failed")
+        self.refresh_bridge_status()
 
     def on_binary_loaded(self, path: str):
         self.current_binary = path
         self.status_bar.showMessage(f"Loaded: {path}")
+        self.refresh_bridge_status()
         # If configured and available, open in Ghidra and fetch functions
         used_bridge = False
+        funcs = []
         if self.config.get("ghidra", {}).get("use_bridge") and ghidra_bridge.is_available():
+            # Best-effort: if a program is already open, we'll get functions; otherwise fallback
             used_bridge = ghidra_bridge.open_program(path)
-        if used_bridge:
             funcs = ghidra_bridge.list_functions()
-            if funcs:
-                self.binary_explorer.set_functions(funcs)
+        if funcs:
+            self.binary_explorer.set_functions(funcs)
         else:
             # Fallback: disassemble locally and set functions/preview
             asm, funcs = get_preview(path)
@@ -195,3 +235,66 @@ class MainWindow(QMainWindow):
         if first:
             self.binary_explorer.functions_tree.setCurrentItem(first)
             self.on_function_selected(first, 0)
+
+    def refresh_bridge_status(self):
+        use_bridge = self.config.get("ghidra", {}).get("use_bridge")
+        if not use_bridge:
+            self.bridge_status_label.setText("Bridge: Off")
+            self.bridge_status_label.setStyleSheet("color: #aaaaaa")
+            return
+        connected = ghidra_bridge.is_available()
+        if connected:
+            self.bridge_status_label.setText("Bridge: Connected")
+            self.bridge_status_label.setStyleSheet("color: #4CAF50")
+        else:
+            self.bridge_status_label.setText("Bridge: Disconnected")
+            self.bridge_status_label.setStyleSheet("color: #f44336")
+
+    def _auto_connect_and_populate(self):
+        # If a bridge server and program are already available, use them
+        if not self.config.get("ghidra", {}).get("use_bridge"):
+            return
+        if not ghidra_bridge.is_available():
+            return
+        if not ghidra_bridge.has_current_program():
+            return
+        funcs = ghidra_bridge.list_functions()
+        if funcs:
+            self.binary_explorer.set_functions(funcs)
+            prog = ghidra_bridge.get_program_name()
+            if prog:
+                self.status_bar.showMessage(f"Connected to Ghidra: {prog}")
+            # Auto-select first function and display using bridge
+            first = self.binary_explorer.functions_tree.topLevelItem(0)
+            if first:
+                self.binary_explorer.functions_tree.setCurrentItem(first)
+                self.on_function_selected(first, 0)
+
+    def connect_bridge(self):
+        self.status_bar.showMessage("Connecting to Ghidra Bridge...")
+        # Trigger lazy connect and update UI
+        connected = ghidra_bridge.is_available()
+        self.refresh_bridge_status()
+        if connected:
+            self._auto_connect_and_populate()
+            self.status_bar.showMessage("Connected to Ghidra Bridge")
+        else:
+            self.status_bar.showMessage("Unable to connect. Start the bridge in Ghidra.")
+
+    def force_reconnect(self):
+        self.status_bar.showMessage("Forcing bridge reconnect...")
+        gh = self.config.get("ghidra", {})
+        host = gh.get("host", "127.0.0.1")
+        port = int(gh.get("port", 18001))
+        # Reset cached bridge so next call re-attempts connection
+        try:
+            ghidra_bridge.set_connection(host, port)
+        except Exception:
+            pass
+        connected = ghidra_bridge.is_available()
+        self.refresh_bridge_status()
+        if connected and ghidra_bridge.has_current_program():
+            self._auto_connect_and_populate()
+            self.status_bar.showMessage("Reconnected to existing bridge")
+        else:
+            self.status_bar.showMessage("Reconnect attempted. Start bridge in Ghidra if needed.")
