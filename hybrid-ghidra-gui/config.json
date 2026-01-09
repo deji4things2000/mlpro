@@ -7,8 +7,8 @@
     "install_dir": "/Applications/ghidra/ghidra_12.0_PUBLIC"
   },
   "llm": {
-    "provider": "local",
-    "model": "placeholder",
-    "api_key": ""
+      "provider": "ollama",
+      "model": "llama3.1:8b",
+      "api_key": ""
   }
 }
