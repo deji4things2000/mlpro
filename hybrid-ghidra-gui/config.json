@@ -1,6 +1,22 @@
 {
+<<<<<<< HEAD
   "theme": "light",
   "ghidra_host": "localhost",
   "ghidra_port": 18001,
   "enable_llm": false
 }
+=======
+  "theme": "dark",
+  "ghidra": {
+    "host": "127.0.0.1",
+    "port": 18001,
+    "use_bridge": false,
+    "install_dir": "/Applications/ghidra/ghidra_12.0_PUBLIC"
+  },
+  "llm": {
+      "provider": "ollama",
+      "model": "llama3.1:8b",
+      "api_key": ""
+  }
+}
+>>>>>>> d779da83386b288f3c7dc115a1e68eb4253363d8

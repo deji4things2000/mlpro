@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 
 DEFAULT_CONFIG = {
@@ -26,3 +27,19 @@ def is_binary_file(path: str) -> bool:
 def read_file_bytes(path: str) -> bytes:
     with open(path, "rb") as f:
         return f.read()
+=======
+import json
+from pathlib import Path
+
+
+def read_json(path: str | Path) -> dict:
+    p = Path(path)
+    with p.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json(path: str | Path, data: dict) -> None:
+    p = Path(path)
+    with p.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+>>>>>>> d779da83386b288f3c7dc115a1e68eb4253363d8
