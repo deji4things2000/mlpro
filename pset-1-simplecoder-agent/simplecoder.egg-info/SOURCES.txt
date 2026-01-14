@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+simplecoder/__init__.py
+simplecoder/agent.py
+simplecoder/context.py
+simplecoder/main.py
+simplecoder/permissions.py
+simplecoder/planner.py
+simplecoder/rag.py
+simplecoder/tools.py
+simplecoder.egg-info/PKG-INFO
+simplecoder.egg-info/SOURCES.txt
+simplecoder.egg-info/dependency_links.txt
+simplecoder.egg-info/entry_points.txt
+simplecoder.egg-info/requires.txt
+simplecoder.egg-info/top_level.txt
