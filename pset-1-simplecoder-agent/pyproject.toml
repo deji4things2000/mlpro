@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simplecoder"
+version = "0.1.0"
+dependencies = [
+    "litellm>=1.0.0",
+    "click>=8.0.0",
+    "numpy>=1.20.0",
+    "rich>=13.0.0"
+]
+
+[project.scripts]
+simplecoder = "simplecoder.main:main"

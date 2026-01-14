@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: simplecoder
+Version: 0.1.0
+Requires-Dist: litellm>=1.0.0
+Requires-Dist: click>=8.0.0
+Requires-Dist: numpy>=1.20.0
+Requires-Dist: rich>=13.0.0
