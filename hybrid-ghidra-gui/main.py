@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import json
 import os
 import sys
@@ -31,6 +32,21 @@ def main():
     win = MainWindow(cfg, logger)
     win.show()
     sys.exit(app.exec())
+=======
+import sys
+from PyQt5.QtWidgets import QApplication
+from ui.main_window import MainWindow
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+
+    window = MainWindow()
+    window.show()
+
+    sys.exit(app.exec_())
+>>>>>>> d779da83386b288f3c7dc115a1e68eb4253363d8
 
 
 if __name__ == "__main__":
