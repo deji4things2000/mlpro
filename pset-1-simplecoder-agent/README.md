@@ -1,114 +1,220 @@
-# AI Agents @ Dartmouth College
-## Problem Set 1, Part III: SimpleCoder
+# SimpleCoder (Problem Set 1, Part III)
 
-In this assignment, we built **SimpleCoder**, a CLI coding agent that can help you write code, navigate codebases, and complete various software engineering tasks. This agent will use several useful concepts from the modern AI Agent development stack: tool use, Retrieval-Augmented Generation (RAG), context management, and task planning, etc.
+SimpleCoder is a small CLI coding agent built for the Dartmouth “AI Agents” course. It uses a ReAct-style loop (model decides → tool call → observation → repeat) with optional planning and optional RAG over your local code.
 
+The goal of this README is to help a new user install, run, and understand what the agent does at runtime (and how reproducible it is).
 
-## Overview
+## Quickstart (new user, most reproducible)
 
-SimpleCoder is a ReAct-style agent that combines tool use, semantic code search, context management, and task planning.
-
-## Getting Started
-
-You are provided with:
-- `simplecoder/main.py` - The CLI entry point (complete, do not modify)
-- `pyproject.toml` - Package configuration (complete, do not modify)
-
-You need to implement:
-- Tool functions and schemas
-- Semantic code RAG for code search
-- Context management with compacting
-- Task planning and decomposition
-- Manage user permissions for file read/write access, etc. (must support a session-level persistence option)
-- The main agent logic
-
-### Set API Key
+1) Clone and enter the project:
 
 ```bash
-# You can pre-configure keys via environment variables.
-# Gemini:
-export GEMINI_API_KEY="your-key-here"
+git clone <your-repo-url>
+cd mlpro/pset-1-simplecoder-agent
 ```
 
-On startup, SimpleCoder will also guide you through selecting a provider (Dartmouth Chat / Gemini / custom OpenAI-compatible) and entering an API key with hidden input if no usable credentials are already configured.
-
-Security note: avoid pasting API keys into terminals/chats; rotate any key you accidentally exposed.
-
-### Install (recommended)
-
-The most reliable way to run SimpleCoder is to install it into the Python environment you plan to use (this avoids PATH/venv confusion).
+2) Create a virtualenv and install:
 
 ```bash
-# From this folder (pset-1-simplecoder-agent/), install into your currently-active environment
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
 python -m pip install -e .
-
-# Or from anywhere:
-# python -m pip install -e /path/to/pset-1-simplecoder-agent
 ```
 
-After that, you can run either:
+3) Configure a provider (choose one):
+
+Gemini:
 
 ```bash
-# Module form (always works)
-python -m simplecoder.main --interactive --verbose
-
-# Or the console script
-simplecoder --interactive --verbose
+export GEMINI_API_KEY="..."
 ```
 
-### Dartmouth Chat setup (no CLI changes required)
-
-Dartmouth Chat provides an OpenAI-compatible API at `https://chat.dartmouth.edu/api`. SimpleCoder will route requests to an OpenAI-compatible endpoint when `SIMPLECODER_API_BASE` (or `OPENAI_API_BASE`) is set.
-
-Note: if `SIMPLECODER_API_BASE` is set, then Gemini model strings like `gemini/...` will be sent to the Dartmouth endpoint and will fail with “model not found”. To use Gemini, unset `SIMPLECODER_API_BASE`/`OPENAI_API_BASE` and set `GEMINI_API_KEY`, or select Gemini in the startup prompt.
-
-```bash
-# From pset-1-simplecoder-agent/
-source scripts/simplecoder_init.sh
-
-# Then run SimpleCoder with a Dartmouth model string
-python -m simplecoder.main --model "$SIMPLECODER_MODEL" --verbose "What is deep learning?"
-```
-
-If you don’t want the prompt-based script, you can set env vars directly:
+Dartmouth Chat (OpenAI-compatible):
 
 ```bash
 export SIMPLECODER_API_BASE="https://chat.dartmouth.edu/api"
 export DARTMOUTH_CHAT_API_KEY="..."
-python -m simplecoder.main --model "anthropic.claude-3-5-haiku-20241022" --verbose "Hello"
 ```
 
-### Intended Usage
+4) (Optional, recommended) Let SimpleCoder prompt you to pick a provider
 
+If you want the built-in provider menu (Dartmouth Chat / Gemini / custom OpenAI-compatible), run interactive mode in a real terminal:
 
-Your implementation should support the following task inputs:
 ```bash
-# Basic usage
+unset SIMPLECODER_NO_PROVIDER_PROMPT
+python -m simplecoder.main --interactive --verbose
+```
+
+If you already set credentials and still want the menu, force it:
+
+```bash
+export SIMPLECODER_FORCE_PROVIDER_PROMPT=1
+python -m simplecoder.main --interactive --verbose
+```
+
+5) Disable interactive prompts and auto-approve tool permissions (best for “reproduce my run”):
+
+```bash
+export SIMPLECODER_NO_PROVIDER_PROMPT=1
+export SIMPLECODER_AUTO_APPROVE=1
+```
+
+6) Run a one-shot task:
+
+```bash
+python -m simplecoder.main --no-interactive --verbose \
+  --model "gemini/gemini-3-flash-preview" \
+  "create a hello.py file"
+```
+
+If you enabled RAG and want to force a re-index (fresh cache), delete `.simplecoder/`:
+
+```bash
+rm -rf .simplecoder/
+```
+
+## Usage
+
+After installing, you can run SimpleCoder either as a module or via the console script:
+
+```bash
+# Always works
+python -m simplecoder.main --interactive --verbose
+
+# Console script (installed by the package)
+simplecoder --interactive --verbose
+```
+
+Examples:
+
+```bash
+# Basic
 simplecoder "create a hello.py file"
 
-# With RAG
+# Enable RAG
 simplecoder --use-rag "what does the Agent class do?"
 
-# With planning
+# Enable planning
 simplecoder --use-planning "create a web server with routes for home and about"
 
-# Interactive mode
-simplecoder --interactive
-
-# Options
-simplecoder --help
+# Non-interactive one-shot mode (recommended for reproduction)
+python -m simplecoder.main --no-interactive "summarize the repo"
 ```
 
-## Design (1 paragraph each)
+Key flags (see `--help` for the full list):
 
-- `simplecoder/agent.py`: Implements a ReAct loop where the model must output strict JSON (`tool` call or `final`). The agent executes tools via a registry, feeds back tool observations, optionally injects RAG snippets, and optionally creates/executes a short plan. For responsiveness, verbose mode streams model tokens and shows a spinner; failures return a structured message instead of crashing.
+- `--model`: LLM model string (defaults to a Gemini model).
+- `--max-iterations`: Max ReAct iterations per task.
+- `--use-planning`: Generate a short plan and execute subtasks.
+- `--use-rag`: Build/search a local embedding index over the workspace.
+- `--rag-embedder`: Embedding model used by RAG.
+- `--rag-index-pattern`: Glob for files to index (workspace-relative).
 
-- `simplecoder/tools.py`: Defines a small tool schema layer (`Tool`, `ToolRegistry`) and implements the required filesystem tools: list/read/search/write/edit. All paths are workspace-scoped (prevents `..` escaping), and each tool call is wrapped by a permission request that can be accepted once per session.
+## Provider configuration
 
-- `simplecoder/rag.py`: Builds an embedding index over AST-derived Python chunks (functions/classes/modules), which improves retrieval granularity over naive fixed-size text chunks. Embeddings are computed via `litellm.embedding`, normalized for cosine similarity, and cached on disk keyed by workspace path + embedder model + glob pattern so repeated runs are fast.
+SimpleCoder supports:
 
-- `simplecoder/context.py`: Tracks a running conversation token estimate, keeps the last `k` messages intact, and compacts older history by asking the model for a concise summary once a threshold is exceeded. This keeps long interactive sessions usable even when tasks span many steps.
+- Gemini via `GEMINI_API_KEY`
+- OpenAI-compatible endpoints (including Dartmouth Chat) via:
+  - `SIMPLECODER_API_BASE` (or `OPENAI_API_BASE`)
+  - `SIMPLECODER_API_KEY` / `DARTMOUTH_CHAT_API_KEY` / `OPENAI_API_KEY`
 
-- `simplecoder/planner.py`: Generates a short (3–7 step) checklist plan as JSON via the LLM, and provides a simple state machine (`pending` → `in_progress` → `completed/blocked`) to track incremental progress. Plans are rendered as Markdown so the CLI can display them cleanly.
+On startup (only in a real TTY), the agent may prompt you to pick a provider and paste a key.
 
-- `simplecoder/permissions.py`: Enforces a conservative permission model for filesystem operations and other sensitive actions. It supports session-level persistence (“always allow” for the remainder of the session) and an environment escape hatch (`SIMPLECODER_AUTO_APPROVE=1`) for demos/autograding.
+- Disable the provider chooser: `SIMPLECODER_NO_PROVIDER_PROMPT=1`
+- Force showing the provider chooser: `SIMPLECODER_FORCE_PROVIDER_PROMPT=1`
+
+Important: if you set `SIMPLECODER_API_BASE`, Gemini model strings like `gemini/...` will be sent to that OpenAI-compatible endpoint and will fail with “model not found”.
+
+## How it works (runtime logic)
+
+This section describes the actual code path when you run the CLI.
+
+### High-level flow
+
+1) CLI parses flags in `simplecoder/main.py` and constructs `Agent(...)`.
+2) The agent resolves provider settings (env vars and/or optional interactive prompt).
+3) For each task:
+   - Optional planning: create a short list of subtasks and execute them in order.
+   - Optional RAG: ensure an embedding index exists, retrieve top code hits, and inject them into context.
+   - ReAct loop: call the model, parse JSON output, run tools if requested, and iterate.
+
+### ReAct loop details
+
+The model is instructed to return **JSON only** in one of two forms:
+
+- Tool call: `{"type":"tool","name":"<tool>","args":{...}}`
+- Final answer: `{"type":"final","answer":"..."}`
+
+The loop runs up to `--max-iterations`. Tool results are added back to the conversation as a system message.
+
+### Tools and permissions
+
+Tools live in `simplecoder/tools.py` and include:
+
+- `list_files`, `read_file`, `search_files`
+- `write_file`, `edit_file_replace`
+
+All tool paths are **workspace-scoped**: the “workspace root” is the directory you run the CLI from (`pwd`). Paths that escape the workspace are rejected.
+
+Tool execution is permission-gated by `simplecoder/permissions.py`:
+
+- Reads are often auto-approved inside “safe directories”.
+- Writes/edits typically require explicit confirmation.
+- For demos/autograding you can bypass prompts with `SIMPLECODER_AUTO_APPROVE=1`.
+
+### RAG (retrieval over local code)
+
+When `--use-rag` is enabled:
+
+- Files matching `--rag-index-pattern` are indexed.
+- Python is chunked using the AST into function/class/module chunks.
+- Embeddings are computed using `litellm.embedding(...)` and cached under `.simplecoder/`.
+- For each task, the agent retrieves top matches and injects them as extra system context.
+
+## Reproducibility
+
+This project is **partially reproducible**.
+
+Deterministic pieces:
+
+- Filesystem tools behave deterministically given the same workspace state.
+- RAG caching is deterministic for a fixed file set + mtimes (it reuses the cached vectors when unchanged).
+
+Non-deterministic pieces:
+
+- LLM responses can vary between runs even with the same prompt/model/temperature.
+- External embedding/search behavior can drift if the provider updates models.
+
+To maximize reproducibility:
+
+```bash
+export SIMPLECODER_NO_PROVIDER_PROMPT=1
+export SIMPLECODER_AUTO_APPROVE=1
+python -m simplecoder.main --no-interactive --verbose \
+  --model "gemini/gemini-3-flash-preview" \
+  "create a hello.py file"
+```
+
+Exact token-for-token reproduction is not guaranteed because LLMs are stochastic services.
+
+## Project layout
+
+- `simplecoder/main.py`: CLI entrypoint (provided by assignment; do not modify).
+- `simplecoder/agent.py`: Core agent loop (provider selection, ReAct, optional planning/RAG).
+- `simplecoder/tools.py`: Tool registry + filesystem tools (workspace-scoped).
+- `simplecoder/permissions.py`: Permission model + prompting/auto-approve controls.
+- `simplecoder/rag.py`: AST chunking + embedding index + cache.
+- `simplecoder/context.py`: Context manager with compaction/summarization.
+- `simplecoder/planner.py`: JSON plan generation and plan rendering.
+- `.simplecoder/`: Local RAG cache (safe to delete).
+
+## Troubleshooting
+
+- "model not found" when using Gemini model strings:
+  - Unset `SIMPLECODER_API_BASE` / `OPENAI_API_BASE` if you intend to use Gemini.
+- Provider prompt appears when you don’t want it:
+  - Set `SIMPLECODER_NO_PROVIDER_PROMPT=1`.
+- Permission prompts block automation:
+  - Set `SIMPLECODER_AUTO_APPROVE=1` (use with care).
