@@ -1,0 +1,799 @@
+{
+  "embedder_model": "gemini/gemini-embedding-001",
+  "index_pattern": "**/*.py",
+  "files": {
+    "simplecoder/planner.py": 1768360860.1033182,
+    "simplecoder/tools.py": 1768360860.0627873,
+    "simplecoder/__init__.py": 1768360860.1661909,
+    "simplecoder/context.py": 1768360860.0844765,
+    "simplecoder/rag.py": 1768360860.0631757,
+    "simplecoder/agent.py": 1768360993.8638005,
+    "simplecoder/permissions.py": 1768360867.1346867,
+    "simplecoder/main.py": 1768358649.1458445
+  },
+  "chunks": [
+    {
+      "id": "776fbbfeca66e1f83b763f9db53b6e05a5526a5b",
+      "filepath": "simplecoder/planner.py",
+      "kind": "class",
+      "name": "Subtask",
+      "start_line": 14,
+      "end_line": 17,
+      "code": "class Subtask:\n    id: str\n    description: str\n    status: SubtaskStatus = \"pending\""
+    },
+    {
+      "id": "bb42376eb28e0b1c9f747fe9df4d4f2cc3a7df41",
+      "filepath": "simplecoder/planner.py",
+      "kind": "class",
+      "name": "TaskPlanner",
+      "start_line": 20,
+      "end_line": 72,
+      "code": "class TaskPlanner:\n    def __init__(self, model: str):\n        self.model = model\n\n    def make_plan(self, task_description: str) -> list[Subtask]:\n        \"\"\"Create a short, actionable plan (3-7 steps).\"\"\"\n        system = (\n            \"You are a senior software agent. \"\n            \"Return ONLY valid JSON with key 'steps'. \"\n            \"Each step is {id, description}. Keep 3-7 steps, imperative, testable.\"\n        )\n        user = {\n            \"task\": task_description,\n            \"constraints\": [\n                \"Prefer small edits\",\n                \"Use tools to inspect/write files\",\n                \"Ask for clarification only if blocked\",\n            ],\n        }\n        resp = litellm.completion(\n            model=self.model,\n            messages=[\n                {\"role\": \"system\", \"content\": system},\n                {\"role\": \"user\", \"content\": json.dumps(user)},\n            ],\n            temperature=0.2,\n        )\n        content = resp[\"choices\"][0][\"message\"][\"content\"].strip()\n        data = json.loads(content)\n        steps = data.get(\"steps\", [])\n        out: list[Subtask] = []\n        for i, s in enumerate(steps):\n            sid = str(s.get(\"id\") or f\"step_{i+1}\")\n            desc = str(s.get(\"description\") or \"\").strip()\n            if not desc:\n                continue\n            out.append(Subtask(id=sid, description=desc, status=\"pending\"))\n        return out[:7]\n\n    @staticmethod\n    def render_plan_md(plan: list[Subtask]) -> str:\n        if not plan:\n            return \"\"\n        status_icon = {\n            \"pending\": \"[ ]\",\n            \"in_progress\": \"[~]\",\n            \"completed\": \"[x]\",\n            \"blocked\": \"[!]\",\n        }\n        lines = [\"### Plan\"]\n        for s in plan:\n            lines.append(f\"- {status_icon.get(s.status, '[ ]')} {s.id}: {s.description}\")\n        return \"\\n\".join(lines)"
+    },
+    {
+      "id": "dc0b491b9ddaee924ccfd586149c0301d5d8737f",
+      "filepath": "simplecoder/planner.py",
+      "kind": "function",
+      "name": "__init__",
+      "start_line": 21,
+      "end_line": 22,
+      "code": "    def __init__(self, model: str):\n        self.model = model"
+    },
+    {
+      "id": "814271ebbba7fb66bfc623eae07da3535abc80f0",
+      "filepath": "simplecoder/planner.py",
+      "kind": "function",
+      "name": "make_plan",
+      "start_line": 24,
+      "end_line": 57,
+      "code": "    def make_plan(self, task_description: str) -> list[Subtask]:\n        \"\"\"Create a short, actionable plan (3-7 steps).\"\"\"\n        system = (\n            \"You are a senior software agent. \"\n            \"Return ONLY valid JSON with key 'steps'. \"\n            \"Each step is {id, description}. Keep 3-7 steps, imperative, testable.\"\n        )\n        user = {\n            \"task\": task_description,\n            \"constraints\": [\n                \"Prefer small edits\",\n                \"Use tools to inspect/write files\",\n                \"Ask for clarification only if blocked\",\n            ],\n        }\n        resp = litellm.completion(\n            model=self.model,\n            messages=[\n                {\"role\": \"system\", \"content\": system},\n                {\"role\": \"user\", \"content\": json.dumps(user)},\n            ],\n            temperature=0.2,\n        )\n        content = resp[\"choices\"][0][\"message\"][\"content\"].strip()\n        data = json.loads(content)\n        steps = data.get(\"steps\", [])\n        out: list[Subtask] = []\n        for i, s in enumerate(steps):\n            sid = str(s.get(\"id\") or f\"step_{i+1}\")\n            desc = str(s.get(\"description\") or \"\").strip()\n            if not desc:\n                continue\n            out.append(Subtask(id=sid, description=desc, status=\"pending\"))\n        return out[:7]"
+    },
+    {
+      "id": "07cd8e12b897e3effc8262408f91ee2cae7c1312",
+      "filepath": "simplecoder/planner.py",
+      "kind": "function",
+      "name": "render_plan_md",
+      "start_line": 60,
+      "end_line": 72,
+      "code": "    def render_plan_md(plan: list[Subtask]) -> str:\n        if not plan:\n            return \"\"\n        status_icon = {\n            \"pending\": \"[ ]\",\n            \"in_progress\": \"[~]\",\n            \"completed\": \"[x]\",\n            \"blocked\": \"[!]\",\n        }\n        lines = [\"### Plan\"]\n        for s in plan:\n            lines.append(f\"- {status_icon.get(s.status, '[ ]')} {s.id}: {s.description}\")\n        return \"\\n\".join(lines)"
+    },
+    {
+      "id": "dfdd45a6997f5809138a3adcbdf48f8b4a802502",
+      "filepath": "simplecoder/tools.py",
+      "kind": "class",
+      "name": "Tool",
+      "start_line": 23,
+      "end_line": 27,
+      "code": "class Tool:\n    name: str\n    description: str\n    schema: JsonDict\n    fn: Callable[..., Any]"
+    },
+    {
+      "id": "918e4c98ea82f06d21bc5bfbc812605f4b345a24",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_workspace_root",
+      "start_line": 30,
+      "end_line": 32,
+      "code": "def _workspace_root() -> Path:\n    # Treat the current working directory as the workspace root.\n    return Path(os.getcwd()).resolve()"
+    },
+    {
+      "id": "b935f1cfbbf3147c724129dc2d2480a0797fa431",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_resolve_path_in_workspace",
+      "start_line": 35,
+      "end_line": 42,
+      "code": "def _resolve_path_in_workspace(path_str: str) -> Path:\n    root = _workspace_root()\n    p = (root / path_str).expanduser().resolve() if not os.path.isabs(path_str) else Path(path_str).expanduser().resolve()\n    try:\n        p.relative_to(root)\n    except Exception as e:\n        raise ValueError(f\"Path escapes workspace root: {path_str}\") from e\n    return p"
+    },
+    {
+      "id": "5ef34144f646819324a118d3f343bf4bb80c5608",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_read_text",
+      "start_line": 45,
+      "end_line": 46,
+      "code": "def _read_text(path: Path) -> str:\n    return path.read_text(encoding=\"utf-8\")"
+    },
+    {
+      "id": "9d30064e38cf3c4e34732aae12d6a228bec4f85f",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_write_text",
+      "start_line": 49,
+      "end_line": 51,
+      "code": "def _write_text(path: Path, content: str) -> None:\n    path.parent.mkdir(parents=True, exist_ok=True)\n    path.write_text(content, encoding=\"utf-8\")"
+    },
+    {
+      "id": "fed95d00652d0281e7fc78a8fe37c93ef3f43aeb",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "tool_list_files",
+      "start_line": 54,
+      "end_line": 71,
+      "code": "def tool_list_files(directory: str = \".\", pattern: str = \"**/*\", max_results: int = 200) -> JsonDict:\n    \"\"\"List files under a directory (workspace-scoped).\"\"\"\n    base = _resolve_path_in_workspace(directory)\n    if not base.exists():\n        return {\"directory\": directory, \"files\": [], \"error\": \"Directory does not exist\"}\n    if not base.is_dir():\n        return {\"directory\": directory, \"files\": [], \"error\": \"Not a directory\"}\n\n    files: list[str] = []\n    # Path.rglob doesn't support \"**/*\" well if base is file; already handled.\n    for p in base.rglob(\"*\"):\n        rel = str(p.relative_to(_workspace_root()))\n        if fnmatch(rel, pattern) or fnmatch(p.name, pattern):\n            files.append(rel)\n        if len(files) >= max_results:\n            break\n    files.sort()\n    return {\"directory\": str(base.relative_to(_workspace_root())), \"files\": files, \"truncated\": len(files) >= max_results}"
+    },
+    {
+      "id": "6b7b00c1ac5afd317c3ff0780597879f6efa87a3",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "tool_read_file",
+      "start_line": 74,
+      "end_line": 90,
+      "code": "def tool_read_file(filepath: str, start_line: int = 1, end_line: int = 200) -> JsonDict:\n    \"\"\"Read a file with optional line range.\"\"\"\n    path = _resolve_path_in_workspace(filepath)\n    if not path.exists() or not path.is_file():\n        return {\"filepath\": filepath, \"error\": \"File not found\"}\n\n    lines = _read_text(path).splitlines()\n    start = max(1, int(start_line))\n    end = max(start, int(end_line))\n    slice_lines = lines[start - 1 : end]\n    return {\n        \"filepath\": str(path.relative_to(_workspace_root())),\n        \"start_line\": start,\n        \"end_line\": min(end, len(lines)),\n        \"total_lines\": len(lines),\n        \"content\": \"\\n\".join(slice_lines),\n    }"
+    },
+    {
+      "id": "6eae04fd7edfb11a33482d276c1f2fbde84c42a7",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "tool_search_files",
+      "start_line": 93,
+      "end_line": 137,
+      "code": "def tool_search_files(\n    query: str,\n    directory: str = \".\",\n    pattern: str = \"**/*.py\",\n    is_regex: bool = False,\n    max_results: int = 20,\n    context_lines: int = 2,\n) -> JsonDict:\n    \"\"\"Search for text in files under a directory.\"\"\"\n    base = _resolve_path_in_workspace(directory)\n    if not base.exists() or not base.is_dir():\n        return {\"matches\": [], \"error\": \"Directory not found\"}\n\n    rx = re.compile(query if is_regex else re.escape(query), re.IGNORECASE)\n    matches: list[JsonDict] = []\n\n    for p in base.rglob(\"*\"):\n        if not p.is_file():\n            continue\n        rel = str(p.relative_to(_workspace_root()))\n        if not fnmatch(rel, pattern) and not fnmatch(p.name, pattern):\n            continue\n\n        try:\n            text = _read_text(p)\n        except Exception:\n            continue\n\n        lines = text.splitlines()\n        for idx, line in enumerate(lines, start=1):\n            if rx.search(line):\n                start = max(1, idx - context_lines)\n                end = min(len(lines), idx + context_lines)\n                snippet = \"\\n\".join(lines[start - 1 : end])\n                matches.append(\n                    {\n                        \"filepath\": rel,\n                        \"line\": idx,\n                        \"snippet\": snippet,\n                    }\n                )\n                if len(matches) >= max_results:\n                    return {\"query\": query, \"matches\": matches, \"truncated\": True}\n\n    return {\"query\": query, \"matches\": matches, \"truncated\": False}"
+    },
+    {
+      "id": "1eff147f9625982a55e4c1c1e2391e7440a5750a",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "tool_write_file",
+      "start_line": 140,
+      "end_line": 151,
+      "code": "def tool_write_file(filepath: str, content: str, overwrite: bool = False) -> JsonDict:\n    \"\"\"Create or overwrite a file.\"\"\"\n    path = _resolve_path_in_workspace(filepath)\n    existed_before = path.exists()\n    if path.exists() and not overwrite:\n        return {\"filepath\": filepath, \"error\": \"File exists (set overwrite=true)\"}\n    _write_text(path, content)\n    return {\n        \"filepath\": str(path.relative_to(_workspace_root())),\n        \"bytes\": len(content.encode(\"utf-8\")),\n        \"overwrote\": existed_before,\n    }"
+    },
+    {
+      "id": "27f9b80e4a69658d538ee22dc6d7f72e957561eb",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "tool_edit_file_replace",
+      "start_line": 154,
+      "end_line": 166,
+      "code": "def tool_edit_file_replace(filepath: str, old: str, new: str, count: int = 1) -> JsonDict:\n    \"\"\"Edit a file by replacing a substring (safe, deterministic).\"\"\"\n    path = _resolve_path_in_workspace(filepath)\n    if not path.exists() or not path.is_file():\n        return {\"filepath\": filepath, \"error\": \"File not found\"}\n\n    text = _read_text(path)\n    if old not in text:\n        return {\"filepath\": filepath, \"error\": \"Target string not found\"}\n\n    replaced = text.replace(old, new, int(count))\n    _write_text(path, replaced)\n    return {\"filepath\": str(path.relative_to(_workspace_root())), \"replacements\": min(text.count(old), int(count))}"
+    },
+    {
+      "id": "2c02910939d0f8e83caf5a5d28e28d4b6155b8ce",
+      "filepath": "simplecoder/tools.py",
+      "kind": "class",
+      "name": "ToolRegistry",
+      "start_line": 169,
+      "end_line": 314,
+      "code": "class ToolRegistry:\n    def __init__(self, permission_manager: PermissionManager):\n        self.permission_manager = permission_manager\n        self._tools: dict[str, Tool] = {}\n        self._register_builtin_tools()\n\n    def list_tools(self) -> list[JsonDict]:\n        return [\n            {\n                \"name\": t.name,\n                \"description\": t.description,\n                \"parameters\": t.schema,\n            }\n            for t in self._tools.values()\n        ]\n\n    def get(self, name: str) -> Tool:\n        if name not in self._tools:\n            raise KeyError(f\"Unknown tool: {name}\")\n        return self._tools[name]\n\n    def execute(self, name: str, args: JsonDict) -> Any:\n        tool = self.get(name)\n        req = self._permission_request_for_tool(name, args)\n        if not self.permission_manager.request_permission(req):\n            raise PermissionError(f\"Permission denied for {name} on {req.target}\")\n        return tool.fn(**args)\n\n    def _register(self, tool: Tool) -> None:\n        self._tools[tool.name] = tool\n\n    def _permission_request_for_tool(self, tool_name: str, args: JsonDict) -> PermissionRequest:\n        mapping: dict[str, tuple[OperationType, str, PermissionLevel]] = {\n            \"list_files\": (OperationType.LIST_DIRECTORY, \"directory\", PermissionLevel.READ),\n            \"read_file\": (OperationType.READ_FILE, \"filepath\", PermissionLevel.READ),\n            \"search_files\": (OperationType.SEARCH_FILES, \"directory\", PermissionLevel.READ),\n            \"write_file\": (OperationType.WRITE_FILE, \"filepath\", PermissionLevel.WRITE),\n            \"edit_file_replace\": (OperationType.EDIT_FILE, \"filepath\", PermissionLevel.WRITE),\n        }\n        if tool_name not in mapping:\n            return PermissionRequest(\n                operation=OperationType.EXECUTE_CODE,\n                target=\"system\",\n                context={\"tool\": tool_name, \"args\": args},\n                required_level=PermissionLevel.EXECUTE,\n            )\n        op, key, level = mapping[tool_name]\n        target_raw = str(args.get(key, \".\"))\n        # PermissionManager default policies are based on absolute paths.\n        try:\n            target_abs = str(_resolve_path_in_workspace(target_raw))\n        except Exception:\n            # If it doesn't resolve in workspace, still pass raw (will likely be denied).\n            target_abs = target_raw\n        return PermissionRequest(\n            operation=op,\n            target=target_abs,\n            context={\"tool\": tool_name, \"args\": args, \"reason\": f\"Running tool {tool_name}\"},\n            required_level=level,\n        )\n\n    def _register_builtin_tools(self) -> None:\n        self._register(\n            Tool(\n                name=\"list_files\",\n                description=\"List files in a directory (workspace-scoped).\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"directory\": {\"type\": \"string\", \"default\": \".\"},\n                        \"pattern\": {\"type\": \"string\", \"default\": \"**/*\"},\n                        \"max_results\": {\"type\": \"integer\", \"default\": 200},\n                    },\n                    \"required\": [\"directory\"],\n                },\n                fn=tool_list_files,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"read_file\",\n                description=\"Read a file (optionally by line range).\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"filepath\": {\"type\": \"string\"},\n                        \"start_line\": {\"type\": \"integer\", \"default\": 1},\n                        \"end_line\": {\"type\": \"integer\", \"default\": 200},\n                    },\n                    \"required\": [\"filepath\"],\n                },\n                fn=tool_read_file,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"search_files\",\n                description=\"Search for text in files under a directory.\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"query\": {\"type\": \"string\"},\n                        \"directory\": {\"type\": \"string\", \"default\": \".\"},\n                        \"pattern\": {\"type\": \"string\", \"default\": \"**/*.py\"},\n                        \"is_regex\": {\"type\": \"boolean\", \"default\": False},\n                        \"max_results\": {\"type\": \"integer\", \"default\": 20},\n                        \"context_lines\": {\"type\": \"integer\", \"default\": 2},\n                    },\n                    \"required\": [\"query\"],\n                },\n                fn=tool_search_files,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"write_file\",\n                description=\"Write a file (creates parents).\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"filepath\": {\"type\": \"string\"},\n                        \"content\": {\"type\": \"string\"},\n                        \"overwrite\": {\"type\": \"boolean\", \"default\": False},\n                    },\n                    \"required\": [\"filepath\", \"content\"],\n                },\n                fn=tool_write_file,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"edit_file_replace\",\n                description=\"Edit a file by replacing a substring with another substring.\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"filepath\": {\"type\": \"string\"},\n                        \"old\": {\"type\": \"string\"},\n                        \"new\": {\"type\": \"string\"},\n                        \"count\": {\"type\": \"integer\", \"default\": 1},\n                    },\n                    \"required\": [\"filepath\", \"old\", \"new\"],\n                },\n                fn=tool_edit_file_replace,\n            )\n        )"
+    },
+    {
+      "id": "b751970fec8a346bc18d0006263fbca9cd329d60",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "__init__",
+      "start_line": 170,
+      "end_line": 173,
+      "code": "    def __init__(self, permission_manager: PermissionManager):\n        self.permission_manager = permission_manager\n        self._tools: dict[str, Tool] = {}\n        self._register_builtin_tools()"
+    },
+    {
+      "id": "d99027bdd9ad8c02ee515146ee6a82077277290c",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "list_tools",
+      "start_line": 175,
+      "end_line": 183,
+      "code": "    def list_tools(self) -> list[JsonDict]:\n        return [\n            {\n                \"name\": t.name,\n                \"description\": t.description,\n                \"parameters\": t.schema,\n            }\n            for t in self._tools.values()\n        ]"
+    },
+    {
+      "id": "5c8f0ac6b99607be885f0a5f624615de4de80726",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "get",
+      "start_line": 185,
+      "end_line": 188,
+      "code": "    def get(self, name: str) -> Tool:\n        if name not in self._tools:\n            raise KeyError(f\"Unknown tool: {name}\")\n        return self._tools[name]"
+    },
+    {
+      "id": "e8929f491bf6478ad2937bd8cb7e19a908549154",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "execute",
+      "start_line": 190,
+      "end_line": 195,
+      "code": "    def execute(self, name: str, args: JsonDict) -> Any:\n        tool = self.get(name)\n        req = self._permission_request_for_tool(name, args)\n        if not self.permission_manager.request_permission(req):\n            raise PermissionError(f\"Permission denied for {name} on {req.target}\")\n        return tool.fn(**args)"
+    },
+    {
+      "id": "c4d9de710023dd1244549dffa301f3b5b1e8c372",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_register",
+      "start_line": 197,
+      "end_line": 198,
+      "code": "    def _register(self, tool: Tool) -> None:\n        self._tools[tool.name] = tool"
+    },
+    {
+      "id": "aa3591ca96a846be2bfc757f5adbc52bbc2656f0",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_permission_request_for_tool",
+      "start_line": 200,
+      "end_line": 228,
+      "code": "    def _permission_request_for_tool(self, tool_name: str, args: JsonDict) -> PermissionRequest:\n        mapping: dict[str, tuple[OperationType, str, PermissionLevel]] = {\n            \"list_files\": (OperationType.LIST_DIRECTORY, \"directory\", PermissionLevel.READ),\n            \"read_file\": (OperationType.READ_FILE, \"filepath\", PermissionLevel.READ),\n            \"search_files\": (OperationType.SEARCH_FILES, \"directory\", PermissionLevel.READ),\n            \"write_file\": (OperationType.WRITE_FILE, \"filepath\", PermissionLevel.WRITE),\n            \"edit_file_replace\": (OperationType.EDIT_FILE, \"filepath\", PermissionLevel.WRITE),\n        }\n        if tool_name not in mapping:\n            return PermissionRequest(\n                operation=OperationType.EXECUTE_CODE,\n                target=\"system\",\n                context={\"tool\": tool_name, \"args\": args},\n                required_level=PermissionLevel.EXECUTE,\n            )\n        op, key, level = mapping[tool_name]\n        target_raw = str(args.get(key, \".\"))\n        # PermissionManager default policies are based on absolute paths.\n        try:\n            target_abs = str(_resolve_path_in_workspace(target_raw))\n        except Exception:\n            # If it doesn't resolve in workspace, still pass raw (will likely be denied).\n            target_abs = target_raw\n        return PermissionRequest(\n            operation=op,\n            target=target_abs,\n            context={\"tool\": tool_name, \"args\": args, \"reason\": f\"Running tool {tool_name}\"},\n            required_level=level,\n        )"
+    },
+    {
+      "id": "1bc55012d1d2c8a57182341c8af69d5a2c00f63f",
+      "filepath": "simplecoder/tools.py",
+      "kind": "function",
+      "name": "_register_builtin_tools",
+      "start_line": 230,
+      "end_line": 314,
+      "code": "    def _register_builtin_tools(self) -> None:\n        self._register(\n            Tool(\n                name=\"list_files\",\n                description=\"List files in a directory (workspace-scoped).\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"directory\": {\"type\": \"string\", \"default\": \".\"},\n                        \"pattern\": {\"type\": \"string\", \"default\": \"**/*\"},\n                        \"max_results\": {\"type\": \"integer\", \"default\": 200},\n                    },\n                    \"required\": [\"directory\"],\n                },\n                fn=tool_list_files,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"read_file\",\n                description=\"Read a file (optionally by line range).\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"filepath\": {\"type\": \"string\"},\n                        \"start_line\": {\"type\": \"integer\", \"default\": 1},\n                        \"end_line\": {\"type\": \"integer\", \"default\": 200},\n                    },\n                    \"required\": [\"filepath\"],\n                },\n                fn=tool_read_file,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"search_files\",\n                description=\"Search for text in files under a directory.\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"query\": {\"type\": \"string\"},\n                        \"directory\": {\"type\": \"string\", \"default\": \".\"},\n                        \"pattern\": {\"type\": \"string\", \"default\": \"**/*.py\"},\n                        \"is_regex\": {\"type\": \"boolean\", \"default\": False},\n                        \"max_results\": {\"type\": \"integer\", \"default\": 20},\n                        \"context_lines\": {\"type\": \"integer\", \"default\": 2},\n                    },\n                    \"required\": [\"query\"],\n                },\n                fn=tool_search_files,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"write_file\",\n                description=\"Write a file (creates parents).\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"filepath\": {\"type\": \"string\"},\n                        \"content\": {\"type\": \"string\"},\n                        \"overwrite\": {\"type\": \"boolean\", \"default\": False},\n                    },\n                    \"required\": [\"filepath\", \"content\"],\n                },\n                fn=tool_write_file,\n            )\n        )\n        self._register(\n            Tool(\n                name=\"edit_file_replace\",\n                description=\"Edit a file by replacing a substring with another substring.\",\n                schema={\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"filepath\": {\"type\": \"string\"},\n                        \"old\": {\"type\": \"string\"},\n                        \"new\": {\"type\": \"string\"},\n                        \"count\": {\"type\": \"integer\", \"default\": 1},\n                    },\n                    \"required\": [\"filepath\", \"old\", \"new\"],\n                },\n                fn=tool_edit_file_replace,\n            )\n        )"
+    },
+    {
+      "id": "27489070eb08dedac8555996417fe7fd88e52785",
+      "filepath": "simplecoder/__init__.py",
+      "kind": "module",
+      "name": "__init__.py",
+      "start_line": 1,
+      "end_line": 3,
+      "code": "from .agent import Agent\n\n__all__ = [\"Agent\"]\n"
+    },
+    {
+      "id": "021fa2a1a740e03c193dfa349d6f972936c4afc3",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "estimate_tokens",
+      "start_line": 12,
+      "end_line": 15,
+      "code": "def estimate_tokens(text: str) -> int:\n    # Dependency-free heuristic: ~4 chars/token in English-like text.\n    # Good enough for deciding when to compact.\n    return max(1, int(len(text) / 4))"
+    },
+    {
+      "id": "ccb4086236dcb86f80fae34f2019bafd78149d81",
+      "filepath": "simplecoder/context.py",
+      "kind": "class",
+      "name": "_StoredMessage",
+      "start_line": 19,
+      "end_line": 21,
+      "code": "class _StoredMessage:\n    message: Message\n    tokens: int"
+    },
+    {
+      "id": "bb88d651cd85984ebc791f0e99ef673da80bca61",
+      "filepath": "simplecoder/context.py",
+      "kind": "class",
+      "name": "ContextManager",
+      "start_line": 24,
+      "end_line": 108,
+      "code": "class ContextManager:\n    \"\"\"Tracks conversation and compacts it when it grows too large.\n\n    - Keeps last `keep_last_messages` intact.\n    - Summarizes older messages using the same LLM (when possible).\n    \"\"\"\n\n    def __init__(\n        self,\n        model: str,\n        max_tokens: int = 8000,\n        keep_last_messages: int = 12,\n        summarizer_model: str | None = None,\n    ):\n        self.model = model\n        self.summarizer_model = summarizer_model or model\n        self.max_tokens = max_tokens\n        self.keep_last_messages = keep_last_messages\n        self._history: list[_StoredMessage] = []\n\n    def add(self, role: str, content: str) -> None:\n        msg = {\"role\": role, \"content\": content}\n        self._history.append(_StoredMessage(message=msg, tokens=estimate_tokens(content)))\n        self._compact_if_needed()\n\n    def extend(self, messages: list[Message]) -> None:\n        for m in messages:\n            self.add(m[\"role\"], m[\"content\"])\n\n    def messages(self) -> list[Message]:\n        return [m.message for m in self._history]\n\n    def token_count(self) -> int:\n        return sum(m.tokens for m in self._history)\n\n    def _compact_if_needed(self) -> None:\n        if self.token_count() <= self.max_tokens:\n            return\n        if len(self._history) <= self.keep_last_messages:\n            return\n\n        keep = self._history[-self.keep_last_messages :]\n        old = self._history[: -self.keep_last_messages]\n        summary = self._summarize(old)\n        self._history = [_StoredMessage(message={\"role\": \"system\", \"content\": summary}, tokens=estimate_tokens(summary))] + keep\n\n    def _summarize(self, items: list[_StoredMessage]) -> str:\n        # If summarization fails, fall back to a compact heuristic.\n        transcript = []\n        for it in items:\n            role = it.message[\"role\"]\n            content = it.message[\"content\"].strip()\n            transcript.append(f\"{role}: {content}\")\n\n        prompt = \"\"\"Summarize the prior conversation for a coding agent.\n\nKeep:\n- user goals and constraints\n- decisions made\n- files mentioned\n- TODOs / open questions\n\nWrite a concise bullet summary.\n\"\"\".strip()\n\n        try:\n            resp = litellm.completion(\n                model=self.summarizer_model,\n                messages=[\n                    {\"role\": \"system\", \"content\": prompt},\n                    {\"role\": \"user\", \"content\": \"\\n\\n\".join(transcript)},\n                ],\n                temperature=0.2,\n            )\n            return resp[\"choices\"][0][\"message\"][\"content\"].strip()\n        except Exception:\n            # Heuristic fallback\n            user_lines = [t for t in transcript if t.startswith(\"user:\")]\n            assistant_lines = [t for t in transcript if t.startswith(\"assistant:\")]\n            return (\n                \"Earlier conversation summary:\\n\"\n                f\"- User messages: {len(user_lines)}\\n\"\n                f\"- Assistant messages: {len(assistant_lines)}\\n\"\n                + (f\"- Recent user topics: {', '.join([l[6:][:80] for l in user_lines[-3:]])}\\n\" if user_lines else \"\")\n            ).strip()"
+    },
+    {
+      "id": "d9799f1d08aeceaff16727b1ad27cd7d56baa41f",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "__init__",
+      "start_line": 31,
+      "end_line": 42,
+      "code": "    def __init__(\n        self,\n        model: str,\n        max_tokens: int = 8000,\n        keep_last_messages: int = 12,\n        summarizer_model: str | None = None,\n    ):\n        self.model = model\n        self.summarizer_model = summarizer_model or model\n        self.max_tokens = max_tokens\n        self.keep_last_messages = keep_last_messages\n        self._history: list[_StoredMessage] = []"
+    },
+    {
+      "id": "404f3605381b02cd2b3fc07a76a298b39825942e",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "add",
+      "start_line": 44,
+      "end_line": 47,
+      "code": "    def add(self, role: str, content: str) -> None:\n        msg = {\"role\": role, \"content\": content}\n        self._history.append(_StoredMessage(message=msg, tokens=estimate_tokens(content)))\n        self._compact_if_needed()"
+    },
+    {
+      "id": "9715b4c9a4c081f318ebb80202bd90a7c0257ce0",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "extend",
+      "start_line": 49,
+      "end_line": 51,
+      "code": "    def extend(self, messages: list[Message]) -> None:\n        for m in messages:\n            self.add(m[\"role\"], m[\"content\"])"
+    },
+    {
+      "id": "907a67c4967ab303ace6305e521ae39b6e3eba75",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "messages",
+      "start_line": 53,
+      "end_line": 54,
+      "code": "    def messages(self) -> list[Message]:\n        return [m.message for m in self._history]"
+    },
+    {
+      "id": "eff04bed1aa0886aabf1cbb5cc732a4450118eea",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "token_count",
+      "start_line": 56,
+      "end_line": 57,
+      "code": "    def token_count(self) -> int:\n        return sum(m.tokens for m in self._history)"
+    },
+    {
+      "id": "257a6fefb4b28abedce75ab83f8139d65313c2d7",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "_compact_if_needed",
+      "start_line": 59,
+      "end_line": 68,
+      "code": "    def _compact_if_needed(self) -> None:\n        if self.token_count() <= self.max_tokens:\n            return\n        if len(self._history) <= self.keep_last_messages:\n            return\n\n        keep = self._history[-self.keep_last_messages :]\n        old = self._history[: -self.keep_last_messages]\n        summary = self._summarize(old)\n        self._history = [_StoredMessage(message={\"role\": \"system\", \"content\": summary}, tokens=estimate_tokens(summary))] + keep"
+    },
+    {
+      "id": "c5ae7c33f6af0e6fdc7e9a791cb81ad7d499c280",
+      "filepath": "simplecoder/context.py",
+      "kind": "function",
+      "name": "_summarize",
+      "start_line": 70,
+      "end_line": 108,
+      "code": "    def _summarize(self, items: list[_StoredMessage]) -> str:\n        # If summarization fails, fall back to a compact heuristic.\n        transcript = []\n        for it in items:\n            role = it.message[\"role\"]\n            content = it.message[\"content\"].strip()\n            transcript.append(f\"{role}: {content}\")\n\n        prompt = \"\"\"Summarize the prior conversation for a coding agent.\n\nKeep:\n- user goals and constraints\n- decisions made\n- files mentioned\n- TODOs / open questions\n\nWrite a concise bullet summary.\n\"\"\".strip()\n\n        try:\n            resp = litellm.completion(\n                model=self.summarizer_model,\n                messages=[\n                    {\"role\": \"system\", \"content\": prompt},\n                    {\"role\": \"user\", \"content\": \"\\n\\n\".join(transcript)},\n                ],\n                temperature=0.2,\n            )\n            return resp[\"choices\"][0][\"message\"][\"content\"].strip()\n        except Exception:\n            # Heuristic fallback\n            user_lines = [t for t in transcript if t.startswith(\"user:\")]\n            assistant_lines = [t for t in transcript if t.startswith(\"assistant:\")]\n            return (\n                \"Earlier conversation summary:\\n\"\n                f\"- User messages: {len(user_lines)}\\n\"\n                f\"- Assistant messages: {len(assistant_lines)}\\n\"\n                + (f\"- Recent user topics: {', '.join([l[6:][:80] for l in user_lines[-3:]])}\\n\" if user_lines else \"\")\n            ).strip()"
+    },
+    {
+      "id": "5cf3d7c486a953c77adca8ad1015c57f4042f2e0",
+      "filepath": "simplecoder/rag.py",
+      "kind": "class",
+      "name": "CodeChunk",
+      "start_line": 16,
+      "end_line": 27,
+      "code": "class CodeChunk:\n    id: str\n    filepath: str  # workspace-relative\n    kind: str  # \"function\" | \"class\" | \"module\"\n    name: str\n    start_line: int\n    end_line: int\n    code: str\n\n    def for_embedding(self) -> str:\n        header = f\"{self.kind} {self.name} ({self.filepath}:{self.start_line}-{self.end_line})\"\n        return f\"{header}\\n\\n{self.code}\""
+    },
+    {
+      "id": "c4898a31dae66b74bdb73a256a744cd46fe256f9",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_workspace_root",
+      "start_line": 30,
+      "end_line": 31,
+      "code": "def _workspace_root() -> Path:\n    return Path(os.getcwd()).resolve()"
+    },
+    {
+      "id": "48cb48a6443c6a93ab6085c30fc3a270bb4050a6",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_iter_files",
+      "start_line": 34,
+      "end_line": 36,
+      "code": "def _iter_files(pattern: str) -> Iterable[Path]:\n    root = _workspace_root()\n    yield from root.glob(pattern)"
+    },
+    {
+      "id": "ac1694af43815b747903e981dab1c5faa5c54813",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_relpath",
+      "start_line": 39,
+      "end_line": 40,
+      "code": "def _relpath(p: Path) -> str:\n    return str(p.resolve().relative_to(_workspace_root()))"
+    },
+    {
+      "id": "6e6b718cd844b2c189f57c4f3e293bbb9a8d7f6a",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_safe_read",
+      "start_line": 43,
+      "end_line": 47,
+      "code": "def _safe_read(p: Path) -> str | None:\n    try:\n        return p.read_text(encoding=\"utf-8\")\n    except Exception:\n        return None"
+    },
+    {
+      "id": "353d0f113f67ed5a66342a7f9658ea73b22a7465",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_sha1",
+      "start_line": 50,
+      "end_line": 51,
+      "code": "def _sha1(s: str) -> str:\n    return hashlib.sha1(s.encode(\"utf-8\")).hexdigest()"
+    },
+    {
+      "id": "cba471121e5b183ed1f5f2bc5bca22b563f22d42",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_extract_python_chunks",
+      "start_line": 54,
+      "end_line": 133,
+      "code": "def _extract_python_chunks(code: str, filepath_rel: str) -> list[CodeChunk]:\n    chunks: list[CodeChunk] = []\n    try:\n        tree = ast.parse(code)\n    except SyntaxError:\n        # If file can't parse, treat as module chunk.\n        module_id = _sha1(f\"module:{filepath_rel}\")\n        return [\n            CodeChunk(\n                id=module_id,\n                filepath=filepath_rel,\n                kind=\"module\",\n                name=Path(filepath_rel).name,\n                start_line=1,\n                end_line=max(1, len(code.splitlines())),\n                code=code,\n            )\n        ]\n\n    lines = code.splitlines()\n\n    def get_segment(node: ast.AST) -> tuple[int, int, str] | None:\n        if not hasattr(node, \"lineno\") or not hasattr(node, \"end_lineno\"):\n            return None\n        start = int(getattr(node, \"lineno\"))\n        end = int(getattr(node, \"end_lineno\"))\n        seg = \"\\n\".join(lines[start - 1 : end])\n        return start, end, seg\n\n    for node in ast.walk(tree):\n        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):\n            seg = get_segment(node)\n            if not seg:\n                continue\n            start, end, seg_text = seg\n            cid = _sha1(f\"fn:{filepath_rel}:{node.name}:{start}:{end}\")\n            chunks.append(\n                CodeChunk(\n                    id=cid,\n                    filepath=filepath_rel,\n                    kind=\"function\",\n                    name=node.name,\n                    start_line=start,\n                    end_line=end,\n                    code=seg_text,\n                )\n            )\n        elif isinstance(node, ast.ClassDef):\n            seg = get_segment(node)\n            if not seg:\n                continue\n            start, end, seg_text = seg\n            cid = _sha1(f\"class:{filepath_rel}:{node.name}:{start}:{end}\")\n            chunks.append(\n                CodeChunk(\n                    id=cid,\n                    filepath=filepath_rel,\n                    kind=\"class\",\n                    name=node.name,\n                    start_line=start,\n                    end_line=end,\n                    code=seg_text,\n                )\n            )\n\n    if not chunks:\n        module_id = _sha1(f\"module:{filepath_rel}\")\n        chunks.append(\n            CodeChunk(\n                id=module_id,\n                filepath=filepath_rel,\n                kind=\"module\",\n                name=Path(filepath_rel).name,\n                start_line=1,\n                end_line=max(1, len(lines)),\n                code=code,\n            )\n        )\n\n    return chunks"
+    },
+    {
+      "id": "b4eacb1b94cfffae56c9def45f5d211e827b8637",
+      "filepath": "simplecoder/rag.py",
+      "kind": "class",
+      "name": "CodeRAG",
+      "start_line": 136,
+      "end_line": 293,
+      "code": "class CodeRAG:\n    \"\"\"AST-based chunking + embedding search with a simple on-disk cache.\n\n    Uses `litellm.embedding` so we don't need extra dependencies.\n    \"\"\"\n\n    def __init__(\n        self,\n        embedder_model: str,\n        index_pattern: str = \"**/*.py\",\n        cache_dir: str = \".simplecoder\",\n    ):\n        self.embedder_model = embedder_model\n        self.index_pattern = index_pattern\n        self.cache_dir = (_workspace_root() / cache_dir).resolve()\n        self.cache_dir.mkdir(parents=True, exist_ok=True)\n\n        self._chunks: list[CodeChunk] = []\n        self._embeddings: np.ndarray | None = None\n\n    def _cache_key(self) -> str:\n        root = str(_workspace_root())\n        return _sha1(f\"{root}|{self.embedder_model}|{self.index_pattern}\")\n\n    def _paths(self) -> tuple[Path, Path]:\n        key = self._cache_key()\n        meta = self.cache_dir / f\"rag_{key}.json\"\n        vecs = self.cache_dir / f\"rag_{key}.npy\"\n        return meta, vecs\n\n    def _load_cache(self) -> bool:\n        meta_path, vecs_path = self._paths()\n        if not meta_path.exists() or not vecs_path.exists():\n            return False\n\n        try:\n            meta = json.loads(meta_path.read_text(encoding=\"utf-8\"))\n            file_metas: dict[str, float] = meta.get(\"files\", {})\n            # Validate mtimes\n            for fp, mtime in file_metas.items():\n                p = _workspace_root() / fp\n                if not p.exists() or abs(p.stat().st_mtime - float(mtime)) > 1e-6:\n                    return False\n\n            self._chunks = [CodeChunk(**c) for c in meta[\"chunks\"]]\n            self._embeddings = np.load(vecs_path)\n            if self._embeddings.ndim != 2 or self._embeddings.shape[0] != len(self._chunks):\n                return False\n            return True\n        except Exception:\n            return False\n\n    def _save_cache(self, file_metas: dict[str, float]) -> None:\n        meta_path, vecs_path = self._paths()\n        meta = {\n            \"embedder_model\": self.embedder_model,\n            \"index_pattern\": self.index_pattern,\n            \"files\": file_metas,\n            \"chunks\": [c.__dict__ for c in self._chunks],\n        }\n        meta_path.write_text(json.dumps(meta, indent=2), encoding=\"utf-8\")\n        assert self._embeddings is not None\n        np.save(vecs_path, self._embeddings)\n\n    def ensure_index(self, progress_cb: Any | None = None) -> None:\n        \"\"\"Build or load the index.\"\"\"\n        if self._embeddings is not None and self._chunks:\n            return\n\n        if self._load_cache():\n            if progress_cb:\n                progress_cb(f\"RAG: loaded cached index with {len(self._chunks)} chunks\")\n            return\n\n        root = _workspace_root()\n        files = [p for p in _iter_files(self.index_pattern) if p.is_file()]\n        file_metas = {str(p.resolve().relative_to(root)): p.stat().st_mtime for p in files}\n\n        chunks: list[CodeChunk] = []\n        for i, p in enumerate(files):\n            if progress_cb and i % 25 == 0:\n                progress_cb(f\"RAG: parsing {i+1}/{len(files)} files\")\n            text = _safe_read(p)\n            if text is None:\n                continue\n            rel = _relpath(p)\n            if p.suffix == \".py\":\n                chunks.extend(_extract_python_chunks(text, rel))\n            else:\n                cid = _sha1(f\"file:{rel}\")\n                chunks.append(\n                    CodeChunk(\n                        id=cid,\n                        filepath=rel,\n                        kind=\"module\",\n                        name=p.name,\n                        start_line=1,\n                        end_line=max(1, len(text.splitlines())),\n                        code=text,\n                    )\n                )\n\n        if not chunks:\n            self._chunks = []\n            self._embeddings = np.zeros((0, 1), dtype=np.float32)\n            return\n\n        # Embed in batches\n        texts = [c.for_embedding() for c in chunks]\n        vectors: list[list[float]] = []\n        batch_size = 32\n        for start in range(0, len(texts), batch_size):\n            end = min(len(texts), start + batch_size)\n            if progress_cb:\n                progress_cb(f\"RAG: embedding chunks {start+1}-{end}/{len(texts)}\")\n            resp = litellm.embedding(model=self.embedder_model, input=texts[start:end])\n            # litellm returns {\"data\": [{\"embedding\": [...]}, ...]}\n            data = resp.get(\"data\", [])\n            for item in data:\n                vectors.append(item[\"embedding\"])\n\n        emb = np.array(vectors, dtype=np.float32)\n        # Normalize for cosine similarity\n        norms = np.linalg.norm(emb, axis=1, keepdims=True) + 1e-12\n        emb = emb / norms\n\n        self._chunks = chunks\n        self._embeddings = emb\n        self._save_cache(file_metas)\n        if progress_cb:\n            progress_cb(f\"RAG: indexed {len(files)} files into {len(chunks)} chunks\")\n\n    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:\n        self.ensure_index()\n        if self._embeddings is None or len(self._chunks) == 0:\n            return []\n\n        resp = litellm.embedding(model=self.embedder_model, input=[query])\n        q = np.array(resp[\"data\"][0][\"embedding\"], dtype=np.float32)\n        q = q / (np.linalg.norm(q) + 1e-12)\n\n        sims = self._embeddings @ q\n        idxs = np.argsort(sims)[-top_k:][::-1]\n        results: list[dict[str, Any]] = []\n        for idx in idxs:\n            c = self._chunks[int(idx)]\n            results.append(\n                {\n                    \"score\": float(sims[int(idx)]),\n                    \"filepath\": c.filepath,\n                    \"kind\": c.kind,\n                    \"name\": c.name,\n                    \"start_line\": c.start_line,\n                    \"end_line\": c.end_line,\n                    \"code\": c.code,\n                }\n            )\n        return results"
+    },
+    {
+      "id": "8fb95b1a9b37b7150e6917ded636cb997741ab59",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "for_embedding",
+      "start_line": 25,
+      "end_line": 27,
+      "code": "    def for_embedding(self) -> str:\n        header = f\"{self.kind} {self.name} ({self.filepath}:{self.start_line}-{self.end_line})\"\n        return f\"{header}\\n\\n{self.code}\""
+    },
+    {
+      "id": "f13e6de25910e5aaab7a6da290d64897aee44fcc",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "get_segment",
+      "start_line": 75,
+      "end_line": 81,
+      "code": "    def get_segment(node: ast.AST) -> tuple[int, int, str] | None:\n        if not hasattr(node, \"lineno\") or not hasattr(node, \"end_lineno\"):\n            return None\n        start = int(getattr(node, \"lineno\"))\n        end = int(getattr(node, \"end_lineno\"))\n        seg = \"\\n\".join(lines[start - 1 : end])\n        return start, end, seg"
+    },
+    {
+      "id": "a24430069842fecaef48821359006213e38de43b",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "__init__",
+      "start_line": 142,
+      "end_line": 154,
+      "code": "    def __init__(\n        self,\n        embedder_model: str,\n        index_pattern: str = \"**/*.py\",\n        cache_dir: str = \".simplecoder\",\n    ):\n        self.embedder_model = embedder_model\n        self.index_pattern = index_pattern\n        self.cache_dir = (_workspace_root() / cache_dir).resolve()\n        self.cache_dir.mkdir(parents=True, exist_ok=True)\n\n        self._chunks: list[CodeChunk] = []\n        self._embeddings: np.ndarray | None = None"
+    },
+    {
+      "id": "a49e7593d6475146695fb1955addc6ddb9c5bbc5",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_cache_key",
+      "start_line": 156,
+      "end_line": 158,
+      "code": "    def _cache_key(self) -> str:\n        root = str(_workspace_root())\n        return _sha1(f\"{root}|{self.embedder_model}|{self.index_pattern}\")"
+    },
+    {
+      "id": "16bb7a1ed9f58d715a90f59984568aaa7ae26890",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_paths",
+      "start_line": 160,
+      "end_line": 164,
+      "code": "    def _paths(self) -> tuple[Path, Path]:\n        key = self._cache_key()\n        meta = self.cache_dir / f\"rag_{key}.json\"\n        vecs = self.cache_dir / f\"rag_{key}.npy\"\n        return meta, vecs"
+    },
+    {
+      "id": "07a3ffd4a8692328a063f1bd5f7660942f30f7f3",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_load_cache",
+      "start_line": 166,
+      "end_line": 186,
+      "code": "    def _load_cache(self) -> bool:\n        meta_path, vecs_path = self._paths()\n        if not meta_path.exists() or not vecs_path.exists():\n            return False\n\n        try:\n            meta = json.loads(meta_path.read_text(encoding=\"utf-8\"))\n            file_metas: dict[str, float] = meta.get(\"files\", {})\n            # Validate mtimes\n            for fp, mtime in file_metas.items():\n                p = _workspace_root() / fp\n                if not p.exists() or abs(p.stat().st_mtime - float(mtime)) > 1e-6:\n                    return False\n\n            self._chunks = [CodeChunk(**c) for c in meta[\"chunks\"]]\n            self._embeddings = np.load(vecs_path)\n            if self._embeddings.ndim != 2 or self._embeddings.shape[0] != len(self._chunks):\n                return False\n            return True\n        except Exception:\n            return False"
+    },
+    {
+      "id": "5fa03387c326a206cabd352d65a6ea7656b4187c",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "_save_cache",
+      "start_line": 188,
+      "end_line": 198,
+      "code": "    def _save_cache(self, file_metas: dict[str, float]) -> None:\n        meta_path, vecs_path = self._paths()\n        meta = {\n            \"embedder_model\": self.embedder_model,\n            \"index_pattern\": self.index_pattern,\n            \"files\": file_metas,\n            \"chunks\": [c.__dict__ for c in self._chunks],\n        }\n        meta_path.write_text(json.dumps(meta, indent=2), encoding=\"utf-8\")\n        assert self._embeddings is not None\n        np.save(vecs_path, self._embeddings)"
+    },
+    {
+      "id": "ca5286a2af353d7c31363c1824d1c38ccbb20220",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "ensure_index",
+      "start_line": 200,
+      "end_line": 266,
+      "code": "    def ensure_index(self, progress_cb: Any | None = None) -> None:\n        \"\"\"Build or load the index.\"\"\"\n        if self._embeddings is not None and self._chunks:\n            return\n\n        if self._load_cache():\n            if progress_cb:\n                progress_cb(f\"RAG: loaded cached index with {len(self._chunks)} chunks\")\n            return\n\n        root = _workspace_root()\n        files = [p for p in _iter_files(self.index_pattern) if p.is_file()]\n        file_metas = {str(p.resolve().relative_to(root)): p.stat().st_mtime for p in files}\n\n        chunks: list[CodeChunk] = []\n        for i, p in enumerate(files):\n            if progress_cb and i % 25 == 0:\n                progress_cb(f\"RAG: parsing {i+1}/{len(files)} files\")\n            text = _safe_read(p)\n            if text is None:\n                continue\n            rel = _relpath(p)\n            if p.suffix == \".py\":\n                chunks.extend(_extract_python_chunks(text, rel))\n            else:\n                cid = _sha1(f\"file:{rel}\")\n                chunks.append(\n                    CodeChunk(\n                        id=cid,\n                        filepath=rel,\n                        kind=\"module\",\n                        name=p.name,\n                        start_line=1,\n                        end_line=max(1, len(text.splitlines())),\n                        code=text,\n                    )\n                )\n\n        if not chunks:\n            self._chunks = []\n            self._embeddings = np.zeros((0, 1), dtype=np.float32)\n            return\n\n        # Embed in batches\n        texts = [c.for_embedding() for c in chunks]\n        vectors: list[list[float]] = []\n        batch_size = 32\n        for start in range(0, len(texts), batch_size):\n            end = min(len(texts), start + batch_size)\n            if progress_cb:\n                progress_cb(f\"RAG: embedding chunks {start+1}-{end}/{len(texts)}\")\n            resp = litellm.embedding(model=self.embedder_model, input=texts[start:end])\n            # litellm returns {\"data\": [{\"embedding\": [...]}, ...]}\n            data = resp.get(\"data\", [])\n            for item in data:\n                vectors.append(item[\"embedding\"])\n\n        emb = np.array(vectors, dtype=np.float32)\n        # Normalize for cosine similarity\n        norms = np.linalg.norm(emb, axis=1, keepdims=True) + 1e-12\n        emb = emb / norms\n\n        self._chunks = chunks\n        self._embeddings = emb\n        self._save_cache(file_metas)\n        if progress_cb:\n            progress_cb(f\"RAG: indexed {len(files)} files into {len(chunks)} chunks\")"
+    },
+    {
+      "id": "62500396f91099e7d7e59a42fd1ca4a48a70c80e",
+      "filepath": "simplecoder/rag.py",
+      "kind": "function",
+      "name": "search",
+      "start_line": 268,
+      "end_line": 293,
+      "code": "    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:\n        self.ensure_index()\n        if self._embeddings is None or len(self._chunks) == 0:\n            return []\n\n        resp = litellm.embedding(model=self.embedder_model, input=[query])\n        q = np.array(resp[\"data\"][0][\"embedding\"], dtype=np.float32)\n        q = q / (np.linalg.norm(q) + 1e-12)\n\n        sims = self._embeddings @ q\n        idxs = np.argsort(sims)[-top_k:][::-1]\n        results: list[dict[str, Any]] = []\n        for idx in idxs:\n            c = self._chunks[int(idx)]\n            results.append(\n                {\n                    \"score\": float(sims[int(idx)]),\n                    \"filepath\": c.filepath,\n                    \"kind\": c.kind,\n                    \"name\": c.name,\n                    \"start_line\": c.start_line,\n                    \"end_line\": c.end_line,\n                    \"code\": c.code,\n                }\n            )\n        return results"
+    },
+    {
+      "id": "47db2697d9e0c78013db5b21da922231cbd508c3",
+      "filepath": "simplecoder/agent.py",
+      "kind": "class",
+      "name": "_RunConfig",
+      "start_line": 24,
+      "end_line": 31,
+      "code": "class _RunConfig:\n    model: str\n    max_iterations: int\n    verbose: bool\n    use_planning: bool\n    use_rag: bool\n    rag_embedder: str\n    rag_index_pattern: str"
+    },
+    {
+      "id": "f77634b74361379ad76e88682fe6bb2eca7b4f74",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_extract_json_object",
+      "start_line": 34,
+      "end_line": 47,
+      "code": "def _extract_json_object(text: str) -> dict[str, Any] | None:\n    \"\"\"Extract the first JSON object from model output.\"\"\"\n    try:\n        return json.loads(text)\n    except Exception:\n        pass\n\n    m = re.search(r\"\\{.*\\}\", text, flags=re.DOTALL)\n    if not m:\n        return None\n    try:\n        return json.loads(m.group(0))\n    except Exception:\n        return None"
+    },
+    {
+      "id": "b4a2c6770cabd5624109876e4dd99382ca59c97d",
+      "filepath": "simplecoder/agent.py",
+      "kind": "class",
+      "name": "Agent",
+      "start_line": 50,
+      "end_line": 258,
+      "code": "class Agent:\n    \"\"\"SimpleCoder CLI agent.\n\n    - ReAct-style loop: decide -> tool -> observe -> repeat.\n    - Optional planning: decomposes task, tracks completion.\n    - Optional RAG: AST-chunked embedding search with disk cache.\n    - Permissions: asks before filesystem writes/edits.\n    \"\"\"\n\n    def __init__(\n        self,\n        model: str,\n        max_iterations: int = 10,\n        verbose: bool = False,\n        use_planning: bool = False,\n        use_rag: bool = False,\n        rag_embedder: str = \"gemini/gemini-embedding-001\",\n        rag_index_pattern: str = \"**/*.py\",\n    ):\n        self.cfg = _RunConfig(\n            model=model,\n            max_iterations=max_iterations,\n            verbose=verbose,\n            use_planning=use_planning,\n            use_rag=use_rag,\n            rag_embedder=rag_embedder,\n            rag_index_pattern=rag_index_pattern,\n        )\n\n        self.permission_manager = create_permission_manager()\n        self.tools = ToolRegistry(self.permission_manager)\n        self.ctx = ContextManager(model=model, max_tokens=8000, keep_last_messages=12)\n        self.planner = TaskPlanner(model=model)\n\n        self.rag: CodeRAG | None = None\n        if use_rag:\n            self.rag = CodeRAG(embedder_model=rag_embedder, index_pattern=rag_index_pattern)\n\n        self._plan: list[Subtask] | None = None\n\n    def run(self, user_input: str) -> str:\n        if self.cfg.use_planning and self._plan is None:\n            self._plan = self._create_plan(user_input)\n\n        if self.cfg.use_planning and self._plan:\n            # Work through subtasks in order; each subtask gets its own ReAct run.\n            outputs: list[str] = [TaskPlanner.render_plan_md(self._plan)]\n            for st in self._plan:\n                if st.status == \"completed\":\n                    continue\n                st.status = \"in_progress\"\n                outputs.append(f\"\\n### Working on: {st.id}\\n{st.description}\")\n                out = self._react(st.description, plan=self._plan)\n                outputs.append(out)\n                # Mark complete unless the model explicitly says it's blocked.\n                st.status = \"completed\" if \"BLOCKED\" not in out else \"blocked\"\n                outputs.insert(0, TaskPlanner.render_plan_md(self._plan))\n            return \"\\n\\n\".join([o for o in outputs if o.strip()])\n\n        return self._react(user_input, plan=self._plan)\n\n    def _create_plan(self, task: str) -> list[Subtask]:\n        if self.cfg.verbose:\n            console.print(\"[cyan]Planning...[/cyan]\")\n        try:\n            plan = self.planner.make_plan(task)\n        except Exception as e:\n            if self.cfg.verbose:\n                console.print(f\"[yellow]Planning failed, continuing without plan: {e}[/yellow]\")\n            return []\n        if self.cfg.verbose and plan:\n            console.print(self.planner.render_plan_md(plan))\n        return plan\n\n    def _progress(self, msg: str) -> None:\n        if self.cfg.verbose:\n            console.print(f\"[dim]{msg}[/dim]\")\n\n    def _react(self, task: str, plan: list[Subtask] | None) -> str:\n        system_prompt = self._system_prompt()\n\n        self.ctx.add(\"system\", system_prompt)\n        self.ctx.add(\"user\", task)\n\n        if self.rag is not None:\n            # Ensure index (cached)\n            try:\n                self.rag.ensure_index(progress_cb=self._progress)\n                hits = self.rag.search(task, top_k=5)\n                if hits:\n                    rag_md = self._format_rag(hits)\n                    self.ctx.add(\"system\", f\"Relevant code context (RAG):\\n{rag_md}\")\n            except Exception as e:\n                self._progress(f\"RAG disabled due to error: {e}\")\n\n        tool_desc = json.dumps(self.tools.list_tools(), indent=2)\n        self.ctx.add(\"system\", f\"Available tools (JSON):\\n{tool_desc}\")\n\n        last_answer = \"\"\n\n        with Progress(\n            SpinnerColumn(),\n            TextColumn(\"{task.description}\"),\n            transient=True,\n            console=console,\n            disable=not self.cfg.verbose,\n        ) as progress:\n            task_id = progress.add_task(\"Thinking...\", total=None)\n            for i in range(self.cfg.max_iterations):\n                progress.update(task_id, description=f\"Iteration {i+1}/{self.cfg.max_iterations}\")\n                model_out = self._call_model(self.ctx.messages())\n                last_answer = model_out\n\n                parsed = _extract_json_object(model_out)\n                if not parsed:\n                    # Not structured; treat as final.\n                    return self._wrap_final(plan, model_out)\n\n                if parsed.get(\"type\") == \"final\":\n                    return self._wrap_final(plan, str(parsed.get(\"answer\", \"\")).strip())\n\n                if parsed.get(\"type\") != \"tool\":\n                    # Unknown shape; treat as final.\n                    return self._wrap_final(plan, model_out)\n\n                tool_name = str(parsed.get(\"name\", \"\"))\n                args = parsed.get(\"args\", {})\n                if not isinstance(args, dict):\n                    args = {}\n\n                self._progress(f\"Tool call: {tool_name}({args})\")\n                try:\n                    result = self.tools.execute(tool_name, args)\n                except Exception as e:\n                    result = {\"error\": str(e)}\n\n                self.ctx.add(\"assistant\", model_out)\n                self.ctx.add(\"tool\", json.dumps({\"name\": tool_name, \"result\": result}, indent=2))\n\n                # If the tool produced an error, encourage recovery.\n                if isinstance(result, dict) and result.get(\"error\"):\n                    self.ctx.add(\n                        \"system\",\n                        \"The previous tool call failed. Either try a different tool, fix args, or ask a clarifying question.\",\n                    )\n\n        return self._wrap_final(plan, last_answer)\n\n    def _call_model(self, messages: list[dict[str, str]]) -> str:\n        # Streaming: print deltas in verbose mode, but still return full content.\n        if self.cfg.verbose:\n            try:\n                chunks = []\n                for part in litellm.completion(\n                    model=self.cfg.model,\n                    messages=messages,\n                    temperature=0.2,\n                    stream=True,\n                ):\n                    delta = part[\"choices\"][0].get(\"delta\", {}).get(\"content\")\n                    if delta:\n                        chunks.append(delta)\n                        console.print(delta, end=\"\")\n                console.print()  # newline after streamed output\n                return \"\".join(chunks).strip()\n            except Exception:\n                # Fall back to non-stream\n                pass\n\n        try:\n            resp = litellm.completion(model=self.cfg.model, messages=messages, temperature=0.2)\n            return resp[\"choices\"][0][\"message\"][\"content\"].strip()\n        except Exception as e:\n            # Return a structured final response so the CLI doesn't crash.\n            msg = (\n                \"LLM call failed. This is usually a missing/invalid API key or provider config.\\n\\n\"\n                \"Fix by setting the right environment variables for your provider (e.g. `GEMINI_API_KEY`).\\n\\n\"\n                f\"Error: {type(e).__name__}: {e}\"\n            )\n            return json.dumps({\"type\": \"final\", \"answer\": msg})\n\n    def _system_prompt(self) -> str:\n        return (\n            \"You are SimpleCoder, a CLI coding agent. \"\n            \"Use a ReAct loop. When you need information or to change files, call a tool. \"\n            \"You MUST respond with JSON only, no backticks, no extra text.\\n\\n\"\n            \"Two allowed JSON shapes:\\n\"\n            \"1) Tool call: {\\\"type\\\":\\\"tool\\\", \\\"name\\\": <tool_name>, \\\"args\\\": {...}}\\n\"\n            \"2) Final answer: {\\\"type\\\":\\\"final\\\", \\\"answer\\\": <string>}\\n\\n\"\n            \"Guidelines:\\n\"\n            \"- Prefer read/search tools before editing.\\n\"\n            \"- When writing/editing, be surgical and explain what changed.\\n\"\n            \"- If blocked, ask a single clear question in the final answer.\"\n        )\n\n    def _format_rag(self, hits: list[dict[str, Any]]) -> str:\n        lines = []\n        for h in hits:\n            loc = f\"{h['filepath']}:{h['start_line']}-{h['end_line']}\"\n            lines.append(f\"- {h['kind']} {h['name']} @ {loc} (score={h['score']:.3f})\")\n            lines.append(\"```\")\n            lines.append(h[\"code\"].strip())\n            lines.append(\"```\")\n        return \"\\n\".join(lines)\n\n    def _wrap_final(self, plan: list[Subtask] | None, answer: str) -> str:\n        if plan:\n            return f\"{TaskPlanner.render_plan_md(plan)}\\n\\n{answer}\".strip()\n        return answer.strip()"
+    },
+    {
+      "id": "439214054d9f09c5b9dd0821c0d4c1ee4f1ac3a6",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "__init__",
+      "start_line": 59,
+      "end_line": 88,
+      "code": "    def __init__(\n        self,\n        model: str,\n        max_iterations: int = 10,\n        verbose: bool = False,\n        use_planning: bool = False,\n        use_rag: bool = False,\n        rag_embedder: str = \"gemini/gemini-embedding-001\",\n        rag_index_pattern: str = \"**/*.py\",\n    ):\n        self.cfg = _RunConfig(\n            model=model,\n            max_iterations=max_iterations,\n            verbose=verbose,\n            use_planning=use_planning,\n            use_rag=use_rag,\n            rag_embedder=rag_embedder,\n            rag_index_pattern=rag_index_pattern,\n        )\n\n        self.permission_manager = create_permission_manager()\n        self.tools = ToolRegistry(self.permission_manager)\n        self.ctx = ContextManager(model=model, max_tokens=8000, keep_last_messages=12)\n        self.planner = TaskPlanner(model=model)\n\n        self.rag: CodeRAG | None = None\n        if use_rag:\n            self.rag = CodeRAG(embedder_model=rag_embedder, index_pattern=rag_index_pattern)\n\n        self._plan: list[Subtask] | None = None"
+    },
+    {
+      "id": "1a9c2a61dede50b1854ec3c56fe4c52974293161",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "run",
+      "start_line": 90,
+      "end_line": 109,
+      "code": "    def run(self, user_input: str) -> str:\n        if self.cfg.use_planning and self._plan is None:\n            self._plan = self._create_plan(user_input)\n\n        if self.cfg.use_planning and self._plan:\n            # Work through subtasks in order; each subtask gets its own ReAct run.\n            outputs: list[str] = [TaskPlanner.render_plan_md(self._plan)]\n            for st in self._plan:\n                if st.status == \"completed\":\n                    continue\n                st.status = \"in_progress\"\n                outputs.append(f\"\\n### Working on: {st.id}\\n{st.description}\")\n                out = self._react(st.description, plan=self._plan)\n                outputs.append(out)\n                # Mark complete unless the model explicitly says it's blocked.\n                st.status = \"completed\" if \"BLOCKED\" not in out else \"blocked\"\n                outputs.insert(0, TaskPlanner.render_plan_md(self._plan))\n            return \"\\n\\n\".join([o for o in outputs if o.strip()])\n\n        return self._react(user_input, plan=self._plan)"
+    },
+    {
+      "id": "57b9277ff866549a7ffd07798469d6e524e5c37b",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_create_plan",
+      "start_line": 111,
+      "end_line": 122,
+      "code": "    def _create_plan(self, task: str) -> list[Subtask]:\n        if self.cfg.verbose:\n            console.print(\"[cyan]Planning...[/cyan]\")\n        try:\n            plan = self.planner.make_plan(task)\n        except Exception as e:\n            if self.cfg.verbose:\n                console.print(f\"[yellow]Planning failed, continuing without plan: {e}[/yellow]\")\n            return []\n        if self.cfg.verbose and plan:\n            console.print(self.planner.render_plan_md(plan))\n        return plan"
+    },
+    {
+      "id": "477e4de0137157e4c4b7d5105f2544c463789931",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_progress",
+      "start_line": 124,
+      "end_line": 126,
+      "code": "    def _progress(self, msg: str) -> None:\n        if self.cfg.verbose:\n            console.print(f\"[dim]{msg}[/dim]\")"
+    },
+    {
+      "id": "a067a4cf8a907779d8811be22b54354c6537e4cb",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_react",
+      "start_line": 128,
+      "end_line": 196,
+      "code": "    def _react(self, task: str, plan: list[Subtask] | None) -> str:\n        system_prompt = self._system_prompt()\n\n        self.ctx.add(\"system\", system_prompt)\n        self.ctx.add(\"user\", task)\n\n        if self.rag is not None:\n            # Ensure index (cached)\n            try:\n                self.rag.ensure_index(progress_cb=self._progress)\n                hits = self.rag.search(task, top_k=5)\n                if hits:\n                    rag_md = self._format_rag(hits)\n                    self.ctx.add(\"system\", f\"Relevant code context (RAG):\\n{rag_md}\")\n            except Exception as e:\n                self._progress(f\"RAG disabled due to error: {e}\")\n\n        tool_desc = json.dumps(self.tools.list_tools(), indent=2)\n        self.ctx.add(\"system\", f\"Available tools (JSON):\\n{tool_desc}\")\n\n        last_answer = \"\"\n\n        with Progress(\n            SpinnerColumn(),\n            TextColumn(\"{task.description}\"),\n            transient=True,\n            console=console,\n            disable=not self.cfg.verbose,\n        ) as progress:\n            task_id = progress.add_task(\"Thinking...\", total=None)\n            for i in range(self.cfg.max_iterations):\n                progress.update(task_id, description=f\"Iteration {i+1}/{self.cfg.max_iterations}\")\n                model_out = self._call_model(self.ctx.messages())\n                last_answer = model_out\n\n                parsed = _extract_json_object(model_out)\n                if not parsed:\n                    # Not structured; treat as final.\n                    return self._wrap_final(plan, model_out)\n\n                if parsed.get(\"type\") == \"final\":\n                    return self._wrap_final(plan, str(parsed.get(\"answer\", \"\")).strip())\n\n                if parsed.get(\"type\") != \"tool\":\n                    # Unknown shape; treat as final.\n                    return self._wrap_final(plan, model_out)\n\n                tool_name = str(parsed.get(\"name\", \"\"))\n                args = parsed.get(\"args\", {})\n                if not isinstance(args, dict):\n                    args = {}\n\n                self._progress(f\"Tool call: {tool_name}({args})\")\n                try:\n                    result = self.tools.execute(tool_name, args)\n                except Exception as e:\n                    result = {\"error\": str(e)}\n\n                self.ctx.add(\"assistant\", model_out)\n                self.ctx.add(\"tool\", json.dumps({\"name\": tool_name, \"result\": result}, indent=2))\n\n                # If the tool produced an error, encourage recovery.\n                if isinstance(result, dict) and result.get(\"error\"):\n                    self.ctx.add(\n                        \"system\",\n                        \"The previous tool call failed. Either try a different tool, fix args, or ask a clarifying question.\",\n                    )\n\n        return self._wrap_final(plan, last_answer)"
+    },
+    {
+      "id": "cd0eaf653cbc3b016d813c9bd8f4be73596fac9f",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_call_model",
+      "start_line": 198,
+      "end_line": 229,
+      "code": "    def _call_model(self, messages: list[dict[str, str]]) -> str:\n        # Streaming: print deltas in verbose mode, but still return full content.\n        if self.cfg.verbose:\n            try:\n                chunks = []\n                for part in litellm.completion(\n                    model=self.cfg.model,\n                    messages=messages,\n                    temperature=0.2,\n                    stream=True,\n                ):\n                    delta = part[\"choices\"][0].get(\"delta\", {}).get(\"content\")\n                    if delta:\n                        chunks.append(delta)\n                        console.print(delta, end=\"\")\n                console.print()  # newline after streamed output\n                return \"\".join(chunks).strip()\n            except Exception:\n                # Fall back to non-stream\n                pass\n\n        try:\n            resp = litellm.completion(model=self.cfg.model, messages=messages, temperature=0.2)\n            return resp[\"choices\"][0][\"message\"][\"content\"].strip()\n        except Exception as e:\n            # Return a structured final response so the CLI doesn't crash.\n            msg = (\n                \"LLM call failed. This is usually a missing/invalid API key or provider config.\\n\\n\"\n                \"Fix by setting the right environment variables for your provider (e.g. `GEMINI_API_KEY`).\\n\\n\"\n                f\"Error: {type(e).__name__}: {e}\"\n            )\n            return json.dumps({\"type\": \"final\", \"answer\": msg})"
+    },
+    {
+      "id": "6041d79ab1cf66a6f57fc3e272312cfa45ceecba",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_system_prompt",
+      "start_line": 231,
+      "end_line": 243,
+      "code": "    def _system_prompt(self) -> str:\n        return (\n            \"You are SimpleCoder, a CLI coding agent. \"\n            \"Use a ReAct loop. When you need information or to change files, call a tool. \"\n            \"You MUST respond with JSON only, no backticks, no extra text.\\n\\n\"\n            \"Two allowed JSON shapes:\\n\"\n            \"1) Tool call: {\\\"type\\\":\\\"tool\\\", \\\"name\\\": <tool_name>, \\\"args\\\": {...}}\\n\"\n            \"2) Final answer: {\\\"type\\\":\\\"final\\\", \\\"answer\\\": <string>}\\n\\n\"\n            \"Guidelines:\\n\"\n            \"- Prefer read/search tools before editing.\\n\"\n            \"- When writing/editing, be surgical and explain what changed.\\n\"\n            \"- If blocked, ask a single clear question in the final answer.\"\n        )"
+    },
+    {
+      "id": "1e4ee89dc5c3bceac78b5ed0f50dab83d0ec50e9",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_format_rag",
+      "start_line": 245,
+      "end_line": 253,
+      "code": "    def _format_rag(self, hits: list[dict[str, Any]]) -> str:\n        lines = []\n        for h in hits:\n            loc = f\"{h['filepath']}:{h['start_line']}-{h['end_line']}\"\n            lines.append(f\"- {h['kind']} {h['name']} @ {loc} (score={h['score']:.3f})\")\n            lines.append(\"```\")\n            lines.append(h[\"code\"].strip())\n            lines.append(\"```\")\n        return \"\\n\".join(lines)"
+    },
+    {
+      "id": "6a13f7f770a143a9fb1983c026853f013be17cff",
+      "filepath": "simplecoder/agent.py",
+      "kind": "function",
+      "name": "_wrap_final",
+      "start_line": 255,
+      "end_line": 258,
+      "code": "    def _wrap_final(self, plan: list[Subtask] | None, answer: str) -> str:\n        if plan:\n            return f\"{TaskPlanner.render_plan_md(plan)}\\n\\n{answer}\".strip()\n        return answer.strip()"
+    },
+    {
+      "id": "20fa381d0e8b35d240f1bb471b21a98f3cac22cc",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "PermissionLevel",
+      "start_line": 23,
+      "end_line": 29,
+      "code": "class PermissionLevel(Enum):\n    \"\"\"Permission levels for operations.\"\"\"\n    NONE = 0\n    READ = 1\n    WRITE = 2\n    EXECUTE = 3\n    ADMIN = 4  # For system-level operations"
+    },
+    {
+      "id": "f5ba3c6667e37fa17e6f56bfe0eaa0e9a3e8b3ba",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "OperationType",
+      "start_line": 31,
+      "end_line": 42,
+      "code": "class OperationType(Enum):\n    \"\"\"Types of operations that require permissions.\"\"\"\n    READ_FILE = \"read_file\"\n    WRITE_FILE = \"write_file\"\n    EXECUTE_CODE = \"execute_code\"\n    DELETE_FILE = \"delete_file\"\n    LIST_DIRECTORY = \"list_directory\"\n    SEARCH_FILES = \"search_files\"\n    EDIT_FILE = \"edit_file\"\n    CREATE_FILE = \"create_file\"\n    INSTALL_PACKAGE = \"install_package\"\n    NETWORK_REQUEST = \"network_request\""
+    },
+    {
+      "id": "f2dbdd22cea0180fc2608fd295680f00b96a24ca",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "PermissionRequest",
+      "start_line": 45,
+      "end_line": 59,
+      "code": "class PermissionRequest:\n    \"\"\"Represents a permission request.\"\"\"\n    operation: OperationType\n    target: str  # e.g., file path, directory, URL\n    context: Dict[str, Any] = field(default_factory=dict)\n    required_level: PermissionLevel = PermissionLevel.READ\n    \n    def to_dict(self) -> Dict:\n        \"\"\"Convert to dictionary for serialization.\"\"\"\n        return {\n            'operation': self.operation.value,\n            'target': self.target,\n            'context': self.context,\n            'required_level': self.required_level.value\n        }"
+    },
+    {
+      "id": "fe13c7b755f04def217166050bdc37eb4956ee69",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "PermissionGrant",
+      "start_line": 62,
+      "end_line": 75,
+      "code": "class PermissionGrant:\n    \"\"\"Represents a granted permission.\"\"\"\n    request: PermissionRequest\n    granted_level: PermissionLevel\n    granted_by: str  # 'user', 'session_policy', 'inherited'\n    timestamp: float\n    expires_at: Optional[float] = None  # None means doesn't expire\n    \n    def is_valid(self) -> bool:\n        \"\"\"Check if the permission grant is still valid.\"\"\"\n        import time\n        if self.expires_at and time.time() > self.expires_at:\n            return False\n        return self.granted_level.value >= self.request.required_level.value"
+    },
+    {
+      "id": "bfb0521f61202401e7bc914682a926d9893bb307",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "PermissionScope",
+      "start_line": 77,
+      "end_line": 82,
+      "code": "class PermissionScope(Enum):\n    \"\"\"Scope of permissions.\"\"\"\n    SESSION = \"session\"  # Applies to entire session\n    TASK = \"task\"        # Applies to specific task\n    DIRECTORY = \"directory\"  # Applies to directory tree\n    FILE = \"file\"        # Applies to specific file"
+    },
+    {
+      "id": "5fbfb6feabb0f0d9948070db98b303344021ade0",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "PermissionPolicy",
+      "start_line": 85,
+      "end_line": 101,
+      "code": "class PermissionPolicy:\n    \"\"\"Defines a permission policy rule.\"\"\"\n    scope: PermissionScope\n    target_pattern: str  # Can be glob pattern or regex\n    allowed_operations: Set[OperationType]\n    max_level: PermissionLevel\n    conditions: Dict[str, Any] = field(default_factory=dict)\n    inheritable: bool = True  # Whether child paths inherit this policy\n    \n    def matches(self, operation: OperationType, target: str) -> bool:\n        \"\"\"Check if this policy applies to the given operation and target.\"\"\"\n        if operation not in self.allowed_operations:\n            return False\n            \n        # Simple glob pattern matching (can be enhanced to regex)\n        from fnmatch import fnmatch\n        return fnmatch(target, self.target_pattern)"
+    },
+    {
+      "id": "d4e3ce40e3abec3557c31f63b0509684c281d8d4",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "class",
+      "name": "PermissionManager",
+      "start_line": 103,
+      "end_line": 416,
+      "code": "class PermissionManager:\n    \"\"\"Manages permissions for the SimpleCoder agent.\"\"\"\n    \n    def __init__(self, session_id: str, config_path: Optional[str] = None):\n        self.session_id = session_id\n        self.permission_grants: List[PermissionGrant] = []\n        self.policies: List[PermissionPolicy] = []\n        self.user_confirmed: Set[str] = set()  # Cache of user-confirmed operations\n        self.permission_cache: Dict[str, PermissionGrant] = {}\n        \n        # Default working directory (can be configured)\n        self.working_directory = os.getcwd()\n        self.safe_directories = {\n            self.working_directory,\n            os.path.join(self.working_directory, \"src\"),\n            os.path.join(self.working_directory, \"tests\"),\n        }\n        \n        # Load default policies\n        self._load_default_policies()\n        \n        # Load custom policies if config file exists\n        if config_path and os.path.exists(config_path):\n            self.load_policies_from_file(config_path)\n    \n    def _load_default_policies(self):\n        \"\"\"Load default security policies.\"\"\"\n        \n        # Allow reading/writing in working directory and subdirectories\n        self.policies.append(PermissionPolicy(\n            scope=PermissionScope.DIRECTORY,\n            target_pattern=os.path.join(self.working_directory, \"**\"),\n            allowed_operations={\n                OperationType.READ_FILE,\n                OperationType.WRITE_FILE,\n                OperationType.LIST_DIRECTORY,\n                OperationType.SEARCH_FILES,\n                OperationType.EDIT_FILE,\n                OperationType.CREATE_FILE,\n            },\n            max_level=PermissionLevel.WRITE,\n            inheritable=True\n        ))\n        \n        # Allow reading in safe directories\n        for safe_dir in self.safe_directories:\n            self.policies.append(PermissionPolicy(\n                scope=PermissionScope.DIRECTORY,\n                target_pattern=os.path.join(safe_dir, \"**\"),\n                allowed_operations={\n                    OperationType.READ_FILE,\n                    OperationType.LIST_DIRECTORY,\n                    OperationType.SEARCH_FILES,\n                },\n                max_level=PermissionLevel.READ,\n                inheritable=True\n            ))\n        \n        # Restrict operations outside working directory\n        self.policies.append(PermissionPolicy(\n            scope=PermissionScope.DIRECTORY,\n            target_pattern=\"/**\",  # Any path\n            allowed_operations=set(),  # No operations allowed by default\n            max_level=PermissionLevel.NONE,\n            inheritable=False\n        ))\n        \n        # Always require user confirmation for these operations\n        self.policies.append(PermissionPolicy(\n            scope=PermissionScope.SESSION,\n            target_pattern=\"**\",\n            allowed_operations={\n                OperationType.DELETE_FILE,\n                OperationType.EXECUTE_CODE,\n                OperationType.INSTALL_PACKAGE,\n                OperationType.NETWORK_REQUEST,\n            },\n            max_level=PermissionLevel.ADMIN,  # Requires explicit user confirmation\n            conditions={\"require_user_confirmation\": True},\n            inheritable=False\n        ))\n    \n    def check_permission(self, request: PermissionRequest) -> bool:\n        \"\"\"\n        Check if an operation is permitted.\n        Returns True if allowed, False if denied.\n        \"\"\"\n        # Check cache first\n        cache_key = f\"{request.operation.value}:{request.target}\"\n        if cache_key in self.permission_cache:\n            grant = self.permission_cache[cache_key]\n            if grant.is_valid():\n                return True\n        \n        # Check applicable policies\n        applicable_policies = [\n            policy for policy in self.policies\n            if policy.matches(request.operation, request.target)\n        ]\n        \n        if not applicable_policies:\n            logger.warning(f\"No policy found for operation {request.operation} on {request.target}\")\n            return False\n        \n        # Get the most permissive policy (highest max_level)\n        applicable_policies.sort(key=lambda p: p.max_level.value, reverse=True)\n        best_policy = applicable_policies[0]\n        \n        # Check if operation level is within policy limits\n        if request.required_level.value > best_policy.max_level.value:\n            logger.warning(\n                f\"Operation {request.operation} requires level {request.required_level} \"\n                f\"but policy only allows {best_policy.max_level}\"\n            )\n            return False\n        \n        # Check if user confirmation is required\n        if best_policy.conditions.get(\"require_user_confirmation\", False):\n            if not self._has_user_confirmation(request):\n                logger.info(f\"User confirmation required for {request.operation} on {request.target}\")\n                return False\n        \n        # Create and cache permission grant\n        grant = PermissionGrant(\n            request=request,\n            granted_level=best_policy.max_level,\n            granted_by=\"policy\",\n            timestamp=os.path.getatime(__file__)  # Use file access time as timestamp\n        )\n        \n        self.permission_grants.append(grant)\n        self.permission_cache[cache_key] = grant\n        \n        return True\n    \n    def _has_user_confirmation(self, request: PermissionRequest) -> bool:\n        \"\"\"\n        Check if user has confirmed this operation.\n        In a real implementation, this would prompt the user.\n        For this assignment, we prompt in the CLI and cache the decision for the session.\n        \"\"\"\n        confirmation_key = f\"{request.operation.value}:{request.target}\"\n        \n        if confirmation_key in self.user_confirmed:\n            return True\n        \n        # Optional escape hatch for demos / autograding.\n        if os.getenv(\"SIMPLECODER_AUTO_APPROVE\", \"\").lower() in {\"1\", \"true\", \"yes\"}:\n            self.user_confirmed.add(confirmation_key)\n            return True\n\n        # Auto-confirm *reads* inside safe directories to keep UX smooth.\n        try:\n            target_path = Path(request.target)\n            if request.operation in {OperationType.READ_FILE, OperationType.LIST_DIRECTORY, OperationType.SEARCH_FILES}:\n                for safe_dir in self.safe_directories:\n                    if str(target_path).startswith(str(safe_dir)):\n                        self.user_confirmed.add(confirmation_key)\n                        return True\n        except Exception:\n            pass\n\n        return False\n    \n    def request_permission(self, request: PermissionRequest) -> bool:\n        \"\"\"\n        Request permission for an operation, prompting user if needed.\n        Returns True if granted, False if denied.\n        \"\"\"\n        if self.check_permission(request):\n            return True\n        \n        # If not automatically granted, ask user\n        return self._prompt_user_for_permission(request)\n    \n    def _prompt_user_for_permission(self, request: PermissionRequest) -> bool:\n        \"\"\"Prompt user for permission (simulated for assignment).\"\"\"\n        print(\"\\n\ud83d\udd12 PERMISSION REQUIRED\")\n        print(f\"Operation: {request.operation.value}\")\n        print(f\"Target: {request.target}\")\n        print(f\"Reason: {request.context.get('reason', 'No reason provided')}\")\n        print(f\"Required permission level: {request.required_level.name}\")\n        print(\"Allow? [y]es / [n]o / [a]lways (this session)\")\n\n        try:\n            response = input(\"> \").strip().lower()\n        except EOFError:\n            response = \"n\"\n\n        if response in [\"y\", \"yes\"]:\n            # Create a user-granted permission\n            import time\n            grant = PermissionGrant(\n                request=request,\n                granted_level=PermissionLevel.ADMIN,  # User grants admin level\n                granted_by=\"user\",\n                timestamp=time.time(),\n                expires_at=time.time() + 3600  # Expire in 1 hour\n            )\n            \n            self.permission_grants.append(grant)\n            cache_key = f\"{request.operation.value}:{request.target}\"\n            self.permission_cache[cache_key] = grant\n            self.user_confirmed.add(cache_key)\n            \n            print(\"Permission granted by user\")\n            return True\n        elif response in [\"a\", \"always\"]:\n            import time\n            grant = PermissionGrant(\n                request=request,\n                granted_level=PermissionLevel.ADMIN,\n                granted_by=\"user\",\n                timestamp=time.time(),\n                expires_at=None,\n            )\n\n            self.permission_grants.append(grant)\n            cache_key = f\"{request.operation.value}:{request.target}\"\n            self.permission_cache[cache_key] = grant\n            self.user_confirmed.add(cache_key)\n            print(\"Permission granted (always for this session)\")\n            return True\n        else:\n            print(\"Permission denied by user\")\n            return False\n    \n    def add_policy(self, policy: PermissionPolicy):\n        \"\"\"Add a new permission policy.\"\"\"\n        self.policies.append(policy)\n        logger.info(f\"Added policy for scope {policy.scope} on pattern {policy.target_pattern}\")\n    \n    def load_policies_from_file(self, config_path: str):\n        \"\"\"Load policies from a JSON configuration file.\"\"\"\n        try:\n            with open(config_path, 'r') as f:\n                config = json.load(f)\n                \n            for policy_config in config.get('policies', []):\n                max_level_raw = policy_config['max_level']\n                if isinstance(max_level_raw, str):\n                    max_level = PermissionLevel[max_level_raw]\n                else:\n                    max_level = PermissionLevel(max_level_raw)\n\n                policy = PermissionPolicy(\n                    scope=PermissionScope(policy_config['scope']),\n                    target_pattern=policy_config['target_pattern'],\n                    allowed_operations={\n                        OperationType(op) for op in policy_config['allowed_operations']\n                    },\n                    max_level=max_level,\n                    conditions=policy_config.get('conditions', {}),\n                    inheritable=policy_config.get('inheritable', True)\n                )\n                self.add_policy(policy)\n                \n            logger.info(f\"Loaded {len(config.get('policies', []))} policies from {config_path}\")\n            \n        except Exception as e:\n            logger.error(f\"Failed to load policies from {config_path}: {e}\")\n    \n    def export_policies(self, output_path: str):\n        \"\"\"Export current policies to a JSON file.\"\"\"\n        policies_data = []\n        \n        for policy in self.policies:\n            policy_data = {\n                'scope': policy.scope.value,\n                'target_pattern': policy.target_pattern,\n                'allowed_operations': [op.value for op in policy.allowed_operations],\n                'max_level': policy.max_level.value,\n                'conditions': policy.conditions,\n                'inheritable': policy.inheritable\n            }\n            policies_data.append(policy_data)\n        \n        config = {\n            'session_id': self.session_id,\n            'working_directory': self.working_directory,\n            'policies': policies_data\n        }\n        \n        try:\n            with open(output_path, 'w') as f:\n                json.dump(config, f, indent=2)\n            logger.info(f\"Exported {len(policies_data)} policies to {output_path}\")\n        except Exception as e:\n            logger.error(f\"Failed to export policies: {e}\")\n    \n    def get_permission_summary(self) -> Dict:\n        \"\"\"Get a summary of current permissions and policies.\"\"\"\n        return {\n            'session_id': self.session_id,\n            'total_grants': len(self.permission_grants),\n            'total_policies': len(self.policies),\n            'working_directory': self.working_directory,\n            'safe_directories': list(self.safe_directories),\n            'active_grants': sum(1 for grant in self.permission_grants if grant.is_valid())\n        }\n    \n    def clear_expired_grants(self):\n        \"\"\"Clean up expired permission grants.\"\"\"\n        initial_count = len(self.permission_grants)\n        self.permission_grants = [grant for grant in self.permission_grants if grant.is_valid()]\n        \n        # Also clear cache\n        self.permission_cache = {\n            k: v for k, v in self.permission_cache.items() if v.is_valid()\n        }\n        \n        cleared = initial_count - len(self.permission_grants)\n        if cleared > 0:\n            logger.info(f\"Cleared {cleared} expired permission grants\")"
+    },
+    {
+      "id": "503286362a5ca939aee4e7e0be99e492f18d8112",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "create_permission_manager",
+      "start_line": 420,
+      "end_line": 426,
+      "code": "def create_permission_manager(session_id: str = None, config_path: str = None) -> PermissionManager:\n    \"\"\"Factory function to create a permission manager.\"\"\"\n    if not session_id:\n        import uuid\n        session_id = str(uuid.uuid4())[:8]\n    \n    return PermissionManager(session_id, config_path)"
+    },
+    {
+      "id": "dd540f686d8e15872f402d4fe29fe44e9878b985",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "to_dict",
+      "start_line": 52,
+      "end_line": 59,
+      "code": "    def to_dict(self) -> Dict:\n        \"\"\"Convert to dictionary for serialization.\"\"\"\n        return {\n            'operation': self.operation.value,\n            'target': self.target,\n            'context': self.context,\n            'required_level': self.required_level.value\n        }"
+    },
+    {
+      "id": "95224fafad2f234e0e187b1d4d5b2c4e931fccac",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "is_valid",
+      "start_line": 70,
+      "end_line": 75,
+      "code": "    def is_valid(self) -> bool:\n        \"\"\"Check if the permission grant is still valid.\"\"\"\n        import time\n        if self.expires_at and time.time() > self.expires_at:\n            return False\n        return self.granted_level.value >= self.request.required_level.value"
+    },
+    {
+      "id": "65d6f627fd3e6427265ca2b1cc21e2143b56ecb8",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "matches",
+      "start_line": 94,
+      "end_line": 101,
+      "code": "    def matches(self, operation: OperationType, target: str) -> bool:\n        \"\"\"Check if this policy applies to the given operation and target.\"\"\"\n        if operation not in self.allowed_operations:\n            return False\n            \n        # Simple glob pattern matching (can be enhanced to regex)\n        from fnmatch import fnmatch\n        return fnmatch(target, self.target_pattern)"
+    },
+    {
+      "id": "5ab0f25449231b8f919c847cac22b4b7058314b7",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "__init__",
+      "start_line": 106,
+      "end_line": 126,
+      "code": "    def __init__(self, session_id: str, config_path: Optional[str] = None):\n        self.session_id = session_id\n        self.permission_grants: List[PermissionGrant] = []\n        self.policies: List[PermissionPolicy] = []\n        self.user_confirmed: Set[str] = set()  # Cache of user-confirmed operations\n        self.permission_cache: Dict[str, PermissionGrant] = {}\n        \n        # Default working directory (can be configured)\n        self.working_directory = os.getcwd()\n        self.safe_directories = {\n            self.working_directory,\n            os.path.join(self.working_directory, \"src\"),\n            os.path.join(self.working_directory, \"tests\"),\n        }\n        \n        # Load default policies\n        self._load_default_policies()\n        \n        # Load custom policies if config file exists\n        if config_path and os.path.exists(config_path):\n            self.load_policies_from_file(config_path)"
+    },
+    {
+      "id": "ec930809ce7aade2754122e066056144f4d5c3ba",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "_load_default_policies",
+      "start_line": 128,
+      "end_line": 183,
+      "code": "    def _load_default_policies(self):\n        \"\"\"Load default security policies.\"\"\"\n        \n        # Allow reading/writing in working directory and subdirectories\n        self.policies.append(PermissionPolicy(\n            scope=PermissionScope.DIRECTORY,\n            target_pattern=os.path.join(self.working_directory, \"**\"),\n            allowed_operations={\n                OperationType.READ_FILE,\n                OperationType.WRITE_FILE,\n                OperationType.LIST_DIRECTORY,\n                OperationType.SEARCH_FILES,\n                OperationType.EDIT_FILE,\n                OperationType.CREATE_FILE,\n            },\n            max_level=PermissionLevel.WRITE,\n            inheritable=True\n        ))\n        \n        # Allow reading in safe directories\n        for safe_dir in self.safe_directories:\n            self.policies.append(PermissionPolicy(\n                scope=PermissionScope.DIRECTORY,\n                target_pattern=os.path.join(safe_dir, \"**\"),\n                allowed_operations={\n                    OperationType.READ_FILE,\n                    OperationType.LIST_DIRECTORY,\n                    OperationType.SEARCH_FILES,\n                },\n                max_level=PermissionLevel.READ,\n                inheritable=True\n            ))\n        \n        # Restrict operations outside working directory\n        self.policies.append(PermissionPolicy(\n            scope=PermissionScope.DIRECTORY,\n            target_pattern=\"/**\",  # Any path\n            allowed_operations=set(),  # No operations allowed by default\n            max_level=PermissionLevel.NONE,\n            inheritable=False\n        ))\n        \n        # Always require user confirmation for these operations\n        self.policies.append(PermissionPolicy(\n            scope=PermissionScope.SESSION,\n            target_pattern=\"**\",\n            allowed_operations={\n                OperationType.DELETE_FILE,\n                OperationType.EXECUTE_CODE,\n                OperationType.INSTALL_PACKAGE,\n                OperationType.NETWORK_REQUEST,\n            },\n            max_level=PermissionLevel.ADMIN,  # Requires explicit user confirmation\n            conditions={\"require_user_confirmation\": True},\n            inheritable=False\n        ))"
+    },
+    {
+      "id": "3647b2d4a26bf1cad2ae165cdc24dbb4ec6a13dc",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "check_permission",
+      "start_line": 185,
+      "end_line": 236,
+      "code": "    def check_permission(self, request: PermissionRequest) -> bool:\n        \"\"\"\n        Check if an operation is permitted.\n        Returns True if allowed, False if denied.\n        \"\"\"\n        # Check cache first\n        cache_key = f\"{request.operation.value}:{request.target}\"\n        if cache_key in self.permission_cache:\n            grant = self.permission_cache[cache_key]\n            if grant.is_valid():\n                return True\n        \n        # Check applicable policies\n        applicable_policies = [\n            policy for policy in self.policies\n            if policy.matches(request.operation, request.target)\n        ]\n        \n        if not applicable_policies:\n            logger.warning(f\"No policy found for operation {request.operation} on {request.target}\")\n            return False\n        \n        # Get the most permissive policy (highest max_level)\n        applicable_policies.sort(key=lambda p: p.max_level.value, reverse=True)\n        best_policy = applicable_policies[0]\n        \n        # Check if operation level is within policy limits\n        if request.required_level.value > best_policy.max_level.value:\n            logger.warning(\n                f\"Operation {request.operation} requires level {request.required_level} \"\n                f\"but policy only allows {best_policy.max_level}\"\n            )\n            return False\n        \n        # Check if user confirmation is required\n        if best_policy.conditions.get(\"require_user_confirmation\", False):\n            if not self._has_user_confirmation(request):\n                logger.info(f\"User confirmation required for {request.operation} on {request.target}\")\n                return False\n        \n        # Create and cache permission grant\n        grant = PermissionGrant(\n            request=request,\n            granted_level=best_policy.max_level,\n            granted_by=\"policy\",\n            timestamp=os.path.getatime(__file__)  # Use file access time as timestamp\n        )\n        \n        self.permission_grants.append(grant)\n        self.permission_cache[cache_key] = grant\n        \n        return True"
+    },
+    {
+      "id": "8519b900e2b9b138fceb1c85e37ac1b459a092ed",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "_has_user_confirmation",
+      "start_line": 238,
+      "end_line": 265,
+      "code": "    def _has_user_confirmation(self, request: PermissionRequest) -> bool:\n        \"\"\"\n        Check if user has confirmed this operation.\n        In a real implementation, this would prompt the user.\n        For this assignment, we prompt in the CLI and cache the decision for the session.\n        \"\"\"\n        confirmation_key = f\"{request.operation.value}:{request.target}\"\n        \n        if confirmation_key in self.user_confirmed:\n            return True\n        \n        # Optional escape hatch for demos / autograding.\n        if os.getenv(\"SIMPLECODER_AUTO_APPROVE\", \"\").lower() in {\"1\", \"true\", \"yes\"}:\n            self.user_confirmed.add(confirmation_key)\n            return True\n\n        # Auto-confirm *reads* inside safe directories to keep UX smooth.\n        try:\n            target_path = Path(request.target)\n            if request.operation in {OperationType.READ_FILE, OperationType.LIST_DIRECTORY, OperationType.SEARCH_FILES}:\n                for safe_dir in self.safe_directories:\n                    if str(target_path).startswith(str(safe_dir)):\n                        self.user_confirmed.add(confirmation_key)\n                        return True\n        except Exception:\n            pass\n\n        return False"
+    },
+    {
+      "id": "13f06af3a2e42947024a22876298f674a197bc93",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "request_permission",
+      "start_line": 267,
+      "end_line": 276,
+      "code": "    def request_permission(self, request: PermissionRequest) -> bool:\n        \"\"\"\n        Request permission for an operation, prompting user if needed.\n        Returns True if granted, False if denied.\n        \"\"\"\n        if self.check_permission(request):\n            return True\n        \n        # If not automatically granted, ask user\n        return self._prompt_user_for_permission(request)"
+    },
+    {
+      "id": "18f166e8b8963b68d171f758d8fc4586e584bd6c",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "_prompt_user_for_permission",
+      "start_line": 278,
+      "end_line": 328,
+      "code": "    def _prompt_user_for_permission(self, request: PermissionRequest) -> bool:\n        \"\"\"Prompt user for permission (simulated for assignment).\"\"\"\n        print(\"\\n\ud83d\udd12 PERMISSION REQUIRED\")\n        print(f\"Operation: {request.operation.value}\")\n        print(f\"Target: {request.target}\")\n        print(f\"Reason: {request.context.get('reason', 'No reason provided')}\")\n        print(f\"Required permission level: {request.required_level.name}\")\n        print(\"Allow? [y]es / [n]o / [a]lways (this session)\")\n\n        try:\n            response = input(\"> \").strip().lower()\n        except EOFError:\n            response = \"n\"\n\n        if response in [\"y\", \"yes\"]:\n            # Create a user-granted permission\n            import time\n            grant = PermissionGrant(\n                request=request,\n                granted_level=PermissionLevel.ADMIN,  # User grants admin level\n                granted_by=\"user\",\n                timestamp=time.time(),\n                expires_at=time.time() + 3600  # Expire in 1 hour\n            )\n            \n            self.permission_grants.append(grant)\n            cache_key = f\"{request.operation.value}:{request.target}\"\n            self.permission_cache[cache_key] = grant\n            self.user_confirmed.add(cache_key)\n            \n            print(\"Permission granted by user\")\n            return True\n        elif response in [\"a\", \"always\"]:\n            import time\n            grant = PermissionGrant(\n                request=request,\n                granted_level=PermissionLevel.ADMIN,\n                granted_by=\"user\",\n                timestamp=time.time(),\n                expires_at=None,\n            )\n\n            self.permission_grants.append(grant)\n            cache_key = f\"{request.operation.value}:{request.target}\"\n            self.permission_cache[cache_key] = grant\n            self.user_confirmed.add(cache_key)\n            print(\"Permission granted (always for this session)\")\n            return True\n        else:\n            print(\"Permission denied by user\")\n            return False"
+    },
+    {
+      "id": "2eddc0c4201200b4e624e48ecda3807574be3d0f",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "add_policy",
+      "start_line": 330,
+      "end_line": 333,
+      "code": "    def add_policy(self, policy: PermissionPolicy):\n        \"\"\"Add a new permission policy.\"\"\"\n        self.policies.append(policy)\n        logger.info(f\"Added policy for scope {policy.scope} on pattern {policy.target_pattern}\")"
+    },
+    {
+      "id": "e5ff703f398512f536905a6cb71553acb736b9fe",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "load_policies_from_file",
+      "start_line": 335,
+      "end_line": 363,
+      "code": "    def load_policies_from_file(self, config_path: str):\n        \"\"\"Load policies from a JSON configuration file.\"\"\"\n        try:\n            with open(config_path, 'r') as f:\n                config = json.load(f)\n                \n            for policy_config in config.get('policies', []):\n                max_level_raw = policy_config['max_level']\n                if isinstance(max_level_raw, str):\n                    max_level = PermissionLevel[max_level_raw]\n                else:\n                    max_level = PermissionLevel(max_level_raw)\n\n                policy = PermissionPolicy(\n                    scope=PermissionScope(policy_config['scope']),\n                    target_pattern=policy_config['target_pattern'],\n                    allowed_operations={\n                        OperationType(op) for op in policy_config['allowed_operations']\n                    },\n                    max_level=max_level,\n                    conditions=policy_config.get('conditions', {}),\n                    inheritable=policy_config.get('inheritable', True)\n                )\n                self.add_policy(policy)\n                \n            logger.info(f\"Loaded {len(config.get('policies', []))} policies from {config_path}\")\n            \n        except Exception as e:\n            logger.error(f\"Failed to load policies from {config_path}: {e}\")"
+    },
+    {
+      "id": "4433df8ac6b63992034c2912401b44f517d295e8",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "export_policies",
+      "start_line": 365,
+      "end_line": 391,
+      "code": "    def export_policies(self, output_path: str):\n        \"\"\"Export current policies to a JSON file.\"\"\"\n        policies_data = []\n        \n        for policy in self.policies:\n            policy_data = {\n                'scope': policy.scope.value,\n                'target_pattern': policy.target_pattern,\n                'allowed_operations': [op.value for op in policy.allowed_operations],\n                'max_level': policy.max_level.value,\n                'conditions': policy.conditions,\n                'inheritable': policy.inheritable\n            }\n            policies_data.append(policy_data)\n        \n        config = {\n            'session_id': self.session_id,\n            'working_directory': self.working_directory,\n            'policies': policies_data\n        }\n        \n        try:\n            with open(output_path, 'w') as f:\n                json.dump(config, f, indent=2)\n            logger.info(f\"Exported {len(policies_data)} policies to {output_path}\")\n        except Exception as e:\n            logger.error(f\"Failed to export policies: {e}\")"
+    },
+    {
+      "id": "086fd0b5bb454c0232508612dfb941d7e7b89ad3",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "get_permission_summary",
+      "start_line": 393,
+      "end_line": 402,
+      "code": "    def get_permission_summary(self) -> Dict:\n        \"\"\"Get a summary of current permissions and policies.\"\"\"\n        return {\n            'session_id': self.session_id,\n            'total_grants': len(self.permission_grants),\n            'total_policies': len(self.policies),\n            'working_directory': self.working_directory,\n            'safe_directories': list(self.safe_directories),\n            'active_grants': sum(1 for grant in self.permission_grants if grant.is_valid())\n        }"
+    },
+    {
+      "id": "57c01bbf7c47af7077e3eb467d9447be200dec5c",
+      "filepath": "simplecoder/permissions.py",
+      "kind": "function",
+      "name": "clear_expired_grants",
+      "start_line": 404,
+      "end_line": 416,
+      "code": "    def clear_expired_grants(self):\n        \"\"\"Clean up expired permission grants.\"\"\"\n        initial_count = len(self.permission_grants)\n        self.permission_grants = [grant for grant in self.permission_grants if grant.is_valid()]\n        \n        # Also clear cache\n        self.permission_cache = {\n            k: v for k, v in self.permission_cache.items() if v.is_valid()\n        }\n        \n        cleared = initial_count - len(self.permission_grants)\n        if cleared > 0:\n            logger.info(f\"Cleared {cleared} expired permission grants\")"
+    },
+    {
+      "id": "3b05df8ac2056fa0d2c63d28866ab74e6a9d1e3e",
+      "filepath": "simplecoder/main.py",
+      "kind": "function",
+      "name": "main",
+      "start_line": 14,
+      "end_line": 16,
+      "code": "def main():\n    \"\"\"Entry point for the simple coder agent.\"\"\"\n    cli()"
+    },
+    {
+      "id": "cbc3e9e8a5576306d2abc7977f40788b4ab00f42",
+      "filepath": "simplecoder/main.py",
+      "kind": "function",
+      "name": "cli",
+      "start_line": 65,
+      "end_line": 114,
+      "code": "def cli(\n    model: str,\n    max_iterations: int,\n    verbose: bool,\n    interactive: bool,\n    use_planning: bool,\n    use_rag: bool,\n    rag_embedder: str,\n    rag_index_pattern: str,\n    task: str | None\n) -> None:\n    \"\"\"A simple coding agent.\"\"\"\n    agent = Agent(\n        model=model,\n        max_iterations=max_iterations,\n        verbose=verbose,\n        use_planning=use_planning,\n        use_rag=use_rag,\n        rag_embedder=rag_embedder,\n        rag_index_pattern=rag_index_pattern\n    )\n\n    if task:\n        response = agent.run(task)\n        console.print(Panel(Markdown(response), title=\"[bold green]Agent Response[/bold green]\", border_style=\"green\"))\n        return\n\n    if interactive:\n        console.print(Panel(\n            \"[bold cyan]SimpleCoder Agent[/bold cyan]\\n\\n\"\n            \"Type your requests and I'll help you code.\\n\"\n            \"Type 'exit', 'quit', or 'q' to quit.\",\n            border_style=\"cyan\"\n        ))\n        console.print()\n\n        while True:\n            user_input = Prompt.ask(\"\\n[bold blue]You[/bold blue]\")\n\n            if user_input.lower() in [\"exit\", \"quit\", \"q\"]:\n                console.print(\"[yellow]Goodbye![/yellow]\")\n                break\n\n            response = agent.run(user_input)\n            console.print()\n            console.print(Panel(\n                Markdown(response),\n                title=\"[bold green]Agent[/bold green]\",\n                border_style=\"green\"\n            ))"
+    }
+  ]
+}
