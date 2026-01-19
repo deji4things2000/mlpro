@@ -1,4 +1,65 @@
 """
+TODO: The following code was at the top-level and caused an IndentationError. It is commented out for now. Please clarify if it should be inside a FastAPI route or function.
+
+# data = await request.json()
+# question = data.get("question", "").strip()
+# job_id = data.get("job_id")
+# if not question:
+#     return JSONResponse({"detail": "No question provided."}, status_code=400)
+# # Try to get context from job if available
+# context = None
+# if job_id and job_id in jobs:
+#     context = jobs[job_id].get("result")
+# # Compose prompt
+# prompt = "You are a reverse engineering assistant."
+# import os, json
+# if context:
+#     prompt += f"\nHere is the binary's analysis summary: {json.dumps(context, indent=2)}"
+# prompt += f"\nUser question: {question}"
+# # Use Dartmouth if available, else fallback
+# answer = "AI Not Found"
+# try:
+#     key = _resolve_dartmouth_key(None)
+#     url = _resolve_dartmouth_url(None)
+#     if key and url:
+#         payload = {
+#             "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
+#             "messages": [
+#                 {"role": "system", "content": "You are a reverse engineering assistant."},
+#                 {"role": "user", "content": prompt},
+#             ],
+#         }
+#         ai_result = _call_dartmouth_chat(payload, key, url)
+#         if isinstance(ai_result, dict):
+#             answer = ai_result.get("insights") or str(ai_result)
+#         else:
+#             answer = str(ai_result)
+# except Exception as e:
+#     answer = f"AI error: {e}"
+# return {"answer": answer}
+# # Use Dartmouth if available, else fallback
+# answer = "AI Not Found"
+# try:
+#     key = _resolve_dartmouth_key(None)
+#     url = _resolve_dartmouth_url(None)
+#     if key and url:
+#         payload = {
+#             "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
+#             "messages": [
+#                 {"role": "system", "content": "You are a reverse engineering assistant."},
+#                 {"role": "user", "content": prompt},
+#             ],
+#         }
+#         ai_result = _call_dartmouth_chat(payload, key, url)
+#         if isinstance(ai_result, dict):
+#             answer = ai_result.get("insights") or str(ai_result)
+#         else:
+#             answer = str(ai_result)
+# except Exception as e:
+#     answer = f"AI error: {e}"
+# return {"answer": answer}
+"""
+"""
 RevCopilot Backend Server - Complete with Web UI
 """
 
@@ -767,15 +828,16 @@ async def serve_ui():
                             </div>
                         </div>
                         
-                        <div id="analysisDetails" class="space-y-4">
-                        <div id="aiChatSection" class="mt-8 p-4 bg-indigo-50 rounded-xl border border-indigo-200">
-                            <h4 class="font-bold text-lg mb-3 flex items-center gap-2"><i class="fas fa-robot text-indigo-600"></i>AI Chat Assistant</h4>
-                            <div id="aiChatHistory" class="mb-3 max-h-64 overflow-y-auto space-y-2 pr-1"></div>
-                            <form id="aiChatForm" class="flex gap-2 mt-2">
-                                <input id="aiUserPrompt" type="text" autocomplete="off" class="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Type your question or command..." />
-                                <button id="aiSendBtn" type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Send</button>
-                            </form>
-                        </div>
+                        <div id="analysisDetails" class="space-y-4"></div>
+                                                <!-- Persistent AI Chat Section -->
+                                                <div id="aiChatSection" class="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                                                    <h4 class="font-bold text-lg mb-3 flex items-center gap-2"><i class="fas fa-robot text-indigo-600"></i>AI Chat Assistant</h4>
+                                                    <div id="aiChatHistory" class="mb-3 max-h-64 overflow-y-auto space-y-2 pr-1"></div>
+                                                    <form id="aiChatForm" class="flex gap-2 mt-2">
+                                                        <input id="aiUserPrompt" type="text" autocomplete="off" class="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Type your question or command..." />
+                                                        <button id="aiSendBtn" type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Send</button>
+                                                    </form>
+                                                </div>
                             <!-- Results will appear here -->
                         </div>
                     </div>
