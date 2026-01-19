@@ -178,6 +178,127 @@ def analyze_binary(file_path: str, mode: str = "auto"):
     
     return results
 
+def _extract_ascii_strings(file_path: str, min_len: int = 4, max_strings: int = 200) -> list[str]:
+    strings = []
+    try:
+        with open(file_path, 'rb') as f:
+            data = f.read()
+        current = bytearray()
+        for b in data:
+            if 32 <= b <= 126:
+                current.append(b)
+            else:
+                if len(current) >= min_len:
+                    strings.append(current.decode('utf-8', errors='ignore'))
+                    if len(strings) >= max_strings:
+                        break
+                current = bytearray()
+        if len(current) >= min_len and len(strings) < max_strings:
+            strings.append(current.decode('utf-8', errors='ignore'))
+    except Exception as e:
+        logger.warning(f"Failed to extract strings: {e}")
+    return strings
+
+def _build_generic_tutor_hints() -> list[str]:
+    return [
+        "Start by checking how many command-line arguments are required.",
+        "Look for input length checks and comparisons that gate success paths.",
+        "Scan for simple byte-wise transformations (XOR, add/sub, rotate, swap).",
+        "Use strings output to locate error/success messages and work backward.",
+    ]
+
+def _heuristic_tutor_hints(file_path: str, results: dict) -> list[str]:
+    hints: list[str] = []
+    strings = _extract_ascii_strings(file_path)
+    lower = [s.lower() for s in strings]
+
+    if any("usage" in s or "argc" in s for s in lower):
+        hints.append("Look for argument count checks or usage text to infer expected inputs.")
+    if any("password" in s or "pass" == s.strip() for s in lower):
+        hints.append("Search for password/secret validation logic and follow its comparisons.")
+    if any("key" in s or "flag" in s for s in lower):
+        hints.append("There may be a key/flag check—trace how input bytes are transformed before comparison.")
+    if any("incorrect" in s or "try again" in s or "failed" in s for s in lower):
+        hints.append("Identify the failure message location and trace the condition that triggers it.")
+    if any("correct" in s or "success" in s for s in lower):
+        hints.append("Find the success message and backtrack to the exact comparison logic.")
+
+    transforms = results.get("analysis", {}).get("transforms", []) or results.get("transforms", [])
+    if transforms:
+        types = {str(t.get("type", "")).lower() for t in transforms}
+        if "xor" in types:
+            hints.append("Check for XOR constants applied to input bytes.")
+        if "rotate" in types or "rol" in types or "ror" in types:
+            hints.append("Look for bit rotations—these are often paired with XOR operations.")
+        if "swap" in types or "mirror" in types:
+            hints.append("Consider whether the byte order is reversed or mirrored.")
+
+    if results.get("analysis", {}).get("hints"):
+        for h in results.get("analysis", {}).get("hints", [])[:3]:
+            if h not in hints:
+                hints.append(h)
+
+    return hints[:6]
+
+def _extract_hints_from_text(text: str) -> list[str]:
+    if not text:
+        return []
+    hints: list[str] = []
+    for line in text.splitlines():
+        cleaned = line.strip()
+        if not cleaned:
+            continue
+        cleaned = cleaned.lstrip("-•* ")
+        if cleaned:
+            hints.append(cleaned)
+    return hints[:6]
+
+def _build_tutor_ai_payload(results: dict, strings_sample: list[str]) -> dict:
+    summary = {
+        "file_info": results.get("file_info"),
+        "analysis": results.get("analysis"),
+        "transforms": results.get("analysis", {}).get("transforms", []),
+        "strings": strings_sample,
+    }
+    return {
+        "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a reverse engineering tutor. Provide 3-6 progressive, non-spoiler hints. Avoid giving the solution.",
+            },
+            {
+                "role": "user",
+                "content": f"Generate hints based on this summary:\n{json.dumps(summary, indent=2)}",
+            },
+        ],
+    }
+
+def _build_tutor_hints(file_path: str, results: dict, api_key: Optional[str] = None, api_url: Optional[str] = None) -> list[str]:
+    heuristic = _heuristic_tutor_hints(file_path, results)
+
+    effective_key = _resolve_dartmouth_key(api_key)
+    effective_url = _resolve_dartmouth_url(api_url)
+
+    if effective_key and effective_url:
+        try:
+            strings_sample = _extract_ascii_strings(file_path)[:30]
+            payload = _build_tutor_ai_payload(results, strings_sample)
+            ai_response = _call_dartmouth_chat(payload, effective_key, effective_url)
+            content = ""
+            if isinstance(ai_response, dict):
+                content = ai_response.get("insights", "") if isinstance(ai_response.get("insights"), str) else ""
+            ai_hints = _extract_hints_from_text(content)
+            if ai_hints:
+                return ai_hints
+        except Exception as e:
+            logger.warning(f"Tutor AI hint generation failed: {e}")
+
+    if heuristic:
+        return heuristic
+
+    return _build_generic_tutor_hints()
+
 try:
     from langchain_dartmouth.llms import ChatDartmouth
 except Exception:
@@ -316,9 +437,10 @@ async def process_analysis(job_id: str, path: str, mode: str, api_key: Optional[
                 "file_info": results.get("file_info"),
             }
         elif mode == "tutor":
+            tutor_hints = _build_tutor_hints(path, results, api_key, api_url)
             jobs[job_id]["result"] = {
                 "type": "tutor",
-                "hints": results.get("analysis", {}).get("hints", []),
+                "hints": tutor_hints,
                 "solution": results.get("solution"),
                 "analysis": results.get("analysis"),
                 "file_info": results.get("file_info"),
