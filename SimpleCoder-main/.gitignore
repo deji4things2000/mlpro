@@ -1,0 +1,16 @@
+# Notebooks & data
+*.ipynb
+data/
+models/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Binaries
+*.dylib
+*.so
+
+# OS
+.DS_Store

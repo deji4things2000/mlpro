@@ -1,0 +1,98 @@
+{
+  "name": "default_permissions",
+  "description": "Default permissions for SimpleCoder agent",
+  "version": "1.0.0",
+  "working_directory": "${CWD}",
+  "safe_directories": [
+    "${CWD}",
+    "${CWD}/src",
+    "${CWD}/tests",
+    "${HOME}/.simplecoder"
+  ],
+  "policies": [
+    {
+      "id": "project_read_write",
+      "scope": "directory",
+      "target_pattern": "${CWD}/**/*",
+      "allowed_operations": [
+        "read_file",
+        "write_file",
+        "edit_file",
+        "create_file",
+        "list_directory",
+        "search_files"
+      ],
+      "max_level": "WRITE",
+      "conditions": {},
+      "inheritable": true,
+      "description": "Allow read/write in current project"
+    },
+    {
+      "id": "project_subdirs_read",
+      "scope": "directory",
+      "target_pattern": "${CWD}/**",
+      "allowed_operations": [
+        "read_file",
+        "list_directory",
+        "search_files"
+      ],
+      "max_level": "READ",
+      "conditions": {},
+      "inheritable": true,
+      "description": "Allow reading in all project subdirectories"
+    },
+    {
+      "id": "system_protection",
+      "scope": "directory",
+      "target_pattern": "/**",
+      "allowed_operations": [],
+      "max_level": "NONE",
+      "conditions": {
+        "require_user_confirmation": true
+      },
+      "inheritable": false,
+      "description": "Protect system files - require explicit permission"
+    },
+    {
+      "id": "sensitive_operations",
+      "scope": "session",
+      "target_pattern": "**",
+      "allowed_operations": [
+        "delete_file",
+        "execute_code",
+        "install_package",
+        "network_request"
+      ],
+      "max_level": "ADMIN",
+      "conditions": {
+        "require_user_confirmation": true,
+        "confirmation_timeout": 30
+      },
+      "inheritable": false,
+      "description": "Always require confirmation for sensitive operations"
+    },
+    {
+      "id": "temp_files",
+      "scope": "directory",
+      "target_pattern": "/tmp/**",
+      "allowed_operations": [
+        "read_file",
+        "write_file",
+        "create_file"
+      ],
+      "max_level": "WRITE",
+      "conditions": {
+        "auto_expire": 3600
+      },
+      "inheritable": false,
+      "description": "Allow temporary file operations with auto-expiry"
+    }
+  ],
+  "session_settings": {
+    "default_grant_duration": 3600,
+    "max_session_duration": 86400,
+    "auto_cleanup_expired": true,
+    "audit_log_enabled": true,
+    "audit_log_path": "${CWD}/.simplecoder/audit.log"
+  }
+}
