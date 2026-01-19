@@ -11,6 +11,11 @@ import json
 import urllib.request
 import urllib.error
 from typing import Optional
+import traceback
+try:
+    import angr
+except ImportError:
+    angr = None
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query, Header, Form
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -102,15 +107,39 @@ def analyze_medium_bin(file_path: str):
         }
     }
 
-def analyze_generic_binary(file_path: str):
-    """Analyze generic binary."""
+def analyze_generic_binary(file_path: str, mode: str = "auto", api_key: Optional[str] = None, api_url: Optional[str] = None):
+    """Analyze generic binary, optionally using AI hints for angr."""
+    angr_solution = None
+    angr_error = None
+    ai_hint = None
+    # If in AI or tutor mode, try to get a hint from Dartmouth
+    if mode in ("ai", "tutor") and api_key and api_url:
+        try:
+            payload = _build_ai_payload({
+                "file_info": {
+                    "filename": os.path.basename(file_path),
+                    "size": os.path.getsize(file_path),
+                    "type": "Unknown",
+                }
+            })
+            ai_result = _call_dartmouth_chat(payload, api_key, api_url)
+            if isinstance(ai_result, dict):
+                ai_hint = ai_result.get("insights")
+        except Exception as e:
+            logger.warning(f"AI hint fetch failed: {e}")
+    if angr is not None:
+        try:
+            angr_solution = _solve_with_angr(file_path, ai_hint=ai_hint)
+        except Exception as e:
+            angr_error = str(e)
+            logger.warning(f"angr failed: {e}\n{traceback.format_exc()}")
     return {
-        "solution": None,
+        "solution": angr_solution if angr_solution else None,
         "analysis": {
             "status": "completed",
-            "technique": "generic",
-            "confidence": 0.0,
-            "message": "Binary not recognized. Try AI mode for manual analysis."
+            "technique": "angr_auto" if angr_solution else "angr_failed",
+            "confidence": 1.0 if angr_solution else 0.0,
+            "message": f"{'angr found a solution.' if angr_solution else 'angr failed to solve this binary.'} {angr_error or ''}"
         },
         "file_info": {
             "filename": os.path.basename(file_path),
@@ -119,7 +148,56 @@ def analyze_generic_binary(file_path: str):
         }
     }
 
-def analyze_binary(file_path: str, mode: str = "auto"):
+
+def _solve_with_angr(file_path: str, ai_hint: str = None):
+    import angr
+    import claripy
+    proj = angr.Project(file_path, auto_load_libs=False)
+    input_len = 16
+    argv1 = claripy.BVS('argv1', 8 * input_len)
+    state = proj.factory.full_init_state(args=[file_path, argv1])
+    simgr = proj.factory.simulation_manager(state)
+
+    # Robustly scan for 'correct'/'success' and 'fail'/'incorrect' addresses
+    def find_addr_by_string(targets):
+        addrs = set()
+        try:
+            for backer in getattr(proj.loader.memory, '_backers', []):
+                # backer can be (addr, size, bytes) or (addr, bytes)
+                if len(backer) == 3:
+                    addr, _, s = backer
+                elif len(backer) == 2:
+                    addr, s = backer
+                else:
+                    continue
+                for t in targets:
+                    if t in s:
+                        addrs.add(addr)
+        except Exception as e:
+            pass
+        return list(addrs)
+
+    success_addrs = find_addr_by_string([b'correct', b'success', b'win', b'congrats'])
+    fail_addrs = find_addr_by_string([b'fail', b'incorrect', b'try again', b'error'])
+
+    # If AI hint is provided, try to use it to guide angr (future extension)
+    # For now, just log it
+    if ai_hint:
+        logger.info(f"AI hint for angr: {ai_hint}")
+
+    # Prefer to find success, avoid fail
+    if success_addrs:
+        simgr.explore(find=success_addrs, avoid=fail_addrs)
+    else:
+        simgr.explore()
+
+    if simgr.found:
+        found = simgr.found[0]
+        val = found.solver.eval(argv1, cast_to=bytes)
+        return [val.decode(errors='ignore'), None]
+    return None
+
+def analyze_binary(file_path: str, mode: str = "auto", api_key: Optional[str] = None, api_url: Optional[str] = None):
     """Analyze a binary file."""
     logger.info(f"Analyzing {file_path} in {mode} mode")
     
@@ -151,7 +229,7 @@ def analyze_binary(file_path: str, mode: str = "auto"):
     if is_medium_bin:
         results = analyze_medium_bin(file_path)
     else:
-        results = analyze_generic_binary(file_path)
+        results = analyze_generic_binary(file_path, mode=mode, api_key=api_key, api_url=api_url)
     
     # Add AI insights
     if is_medium_bin:
@@ -415,7 +493,7 @@ async def process_analysis(job_id: str, path: str, mode: str, api_key: Optional[
         logger.info(f"Processing job {job_id} in {mode} mode")
         
         # Run analysis
-        results = analyze_binary(path, mode)
+        results = analyze_binary(path, mode, api_key, api_url)
         
         # Format response
         if mode == "auto":
@@ -589,6 +667,20 @@ async def serve_ui():
         </div>
 
         <div class="container mx-auto px-4 py-8">
+            <div class="mb-8 p-4 bg-yellow-100 border-l-4 border-yellow-400 rounded">
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="text-yellow-600 text-xl"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span class="font-semibold text-yellow-800">Limitations of Automated Analysis</span>
+                </div>
+                <div class="text-yellow-900 text-sm mt-1">
+                    <ul class="list-disc ml-6">
+                        <li>No tool (including angr) can automatically solve all binaries. Complex, obfuscated, or protected binaries may require manual reverse engineering.</li>
+                        <li>For best results, use CTF-style crackmes or simple input-checking binaries.</li>
+                        <li>For advanced analysis, use tools like Ghidra, IDA Pro, Binary Ninja, or radare2 alongside this platform.</li>
+                        <li>AI/LLM features can assist with code understanding, but cannot guarantee a solution for every binary.</li>
+                    </ul>
+                </div>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column -->
                 <div class="space-y-6">
@@ -676,6 +768,14 @@ async def serve_ui():
                         </div>
                         
                         <div id="analysisDetails" class="space-y-4">
+                        <div id="aiChatSection" class="mt-8 p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                            <h4 class="font-bold text-lg mb-3 flex items-center gap-2"><i class="fas fa-robot text-indigo-600"></i>AI Chat Assistant</h4>
+                            <div id="aiChatHistory" class="mb-3 max-h-64 overflow-y-auto space-y-2 pr-1"></div>
+                            <form id="aiChatForm" class="flex gap-2 mt-2">
+                                <input id="aiUserPrompt" type="text" autocomplete="off" class="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Type your question or command..." />
+                                <button id="aiSendBtn" type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Send</button>
+                            </form>
+                        </div>
                             <!-- Results will appear here -->
                         </div>
                     </div>
@@ -699,6 +799,56 @@ async def serve_ui():
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                // Interactive AI Chat logic
+                const aiChatForm = document.getElementById('aiChatForm');
+                const aiUserPrompt = document.getElementById('aiUserPrompt');
+                const aiChatHistory = document.getElementById('aiChatHistory');
+                let aiChatMessages = [];
+                let lastJobId = null;
+                function getCurrentJobId() {
+                    try {
+                        return currentJobId || lastJobId;
+                    } catch { return lastJobId; }
+                }
+                function renderChat() {
+                    aiChatHistory.innerHTML = aiChatMessages.map(msg => `
+                        <div class="flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-[80%] px-4 py-2 rounded-xl shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none border border-indigo-100'}">
+                                <span class="block text-xs font-semibold mb-1 opacity-70">${msg.role === 'user' ? 'You' : 'AI'}</span>
+                                <span class="whitespace-pre-line">${msg.content}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
+                }
+                if (aiChatForm && aiUserPrompt && aiChatHistory) {
+                    aiChatForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const prompt = aiUserPrompt.value.trim();
+                        if (!prompt) return;
+                        aiChatMessages.push({ role: 'user', content: prompt });
+                        renderChat();
+                        aiUserPrompt.value = '';
+                        const jobId = getCurrentJobId();
+                        aiChatMessages.push({ role: 'ai', content: 'Thinking...' });
+                        renderChat();
+                        try {
+                            const res = await fetch('/api/ai/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ question: prompt, job_id: jobId })
+                            });
+                            const data = await res.json();
+                            aiChatMessages.pop(); // Remove 'Thinking...'
+                            aiChatMessages.push({ role: 'ai', content: data.answer || data.detail || 'No answer.' });
+                            renderChat();
+                        } catch (e) {
+                            aiChatMessages.pop();
+                            aiChatMessages.push({ role: 'ai', content: 'Error contacting AI.' });
+                            renderChat();
+                        }
+                    });
+                }
                 const API_BASE = window.location.origin;
                 const DEFAULT_DARTMOUTH_URL = 'https://chat.dartmouth.edu/api';
                 let currentFile = null;
