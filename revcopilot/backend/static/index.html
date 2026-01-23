@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RevCopilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">🔐 RevCopilot</h1>
+        <p class="text-gray-600 mb-8">AI-Powered Reverse Engineering Assistant</p>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Upload Binary</h2>
+            <input type="file" id="fileInput" class="mb-4">
+            <select id="modeSelect" class="border rounded px-3 py-2 mb-4">
+                <option value="auto">Auto-Solve</option>
+                <option value="ai">AI-Assist</option>
+                <option value="tutor">Tutor Mode</option>
+            </select>
+            <button onclick="uploadFile()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                Analyze
+            </button>
+        </div>
+        
+        <div id="results" class="hidden bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Results</h2>
+            <pre id="resultOutput" class="bg-gray-900 text-green-400 p-4 rounded overflow-auto"></pre>
+        </div>
+    </div>
+    
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const mode = document.getElementById('modeSelect').value;
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                // Upload
+                const uploadRes = await fetch(`http://localhost:8000/api/analyze?mode=${mode}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const uploadData = await uploadRes.json();
+                const jobId = uploadData.job_id;
+                
+                // Poll for results
+                for (let i = 0; i < 10; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const resultRes = await fetch(`http://localhost:8000/api/result/${jobId}`);
+                    const resultData = await resultRes.json();
+                    
+                    if (resultData.status === 'completed') {
+                        showResults(resultData.result);
+                        return;
+                    }
+                }
+                
+                alert('Timeout waiting for results');
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function showResults(result) {
+            document.getElementById('results').classList.remove('hidden');
+            const output = document.getElementById('resultOutput');
+            
+            let text = '=== ANALYSIS RESULTS ===\n\n';
+            
+            if (result.solution) {
+                text += `✅ SOLUTION FOUND!\n`;
+                text += `arg1: ${result.solution.arg1}\n`;
+                text += `arg2: ${result.solution.arg2}\n\n`;
+                text += `Command: ./medium.bin '${result.solution.arg1}' '${result.solution.arg2}'\n\n`;
+            }
+            
+            if (result.analysis) {
+                text += `Analysis: ${JSON.stringify(result.analysis, null, 2)}\n`;
+            }
+            
+            output.textContent = text;
+        }
+    </script>
+</body>
+</html>

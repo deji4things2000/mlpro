@@ -1,3 +1,4 @@
+
 ---
 
 ## **`.gitignore`**
@@ -56,12 +57,3 @@ docker-compose.override.yml
 # Ghidra
 ghidra_projects/
 *.gpr
-
-# Local virtual environments
-.venv/
-venv/
-
-# OS artifacts
-.DS_Store
-Thumbs.db
-```
