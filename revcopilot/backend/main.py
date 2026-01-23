@@ -1,99 +1,11 @@
-"""
-TODO: The following code was at the top-level and caused an IndentationError. It is commented out for now. Please clarify if it should be inside a FastAPI route or function.
-
-# data = await request.json()
-# question = data.get("question", "").strip()
-# job_id = data.get("job_id")
-# if not question:
-#     return JSONResponse({"detail": "No question provided."}, status_code=400)
-# # Try to get context from job if available
-# context = None
-# if job_id and job_id in jobs:
-#     context = jobs[job_id].get("result")
-# # Compose prompt
-# prompt = "You are a reverse engineering assistant."
-# import os, json
-# if context:
-#     prompt += f"\nHere is the binary's analysis summary: {json.dumps(context, indent=2)}"
-# prompt += f"\nUser question: {question}"
-# # Use Dartmouth if available, else fallback
-# answer = "AI Not Found"
-# try:
-#     key = _resolve_dartmouth_key(None)
-#     url = _resolve_dartmouth_url(None)
-#     if key and url:
-#         payload = {
-#             "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
-#             "messages": [
-#                 {"role": "system", "content": "You are a reverse engineering assistant."},
-#                 {"role": "user", "content": prompt},
-#             ],
-#         }
-#         ai_result = _call_dartmouth_chat(payload, key, url)
-#         if isinstance(ai_result, dict):
-#             answer = ai_result.get("insights") or str(ai_result)
-#         else:
-#             answer = str(ai_result)
-# except Exception as e:
-#     answer = f"AI error: {e}"
-# return {"answer": answer}
-# # Use Dartmouth if available, else fallback
-# answer = "AI Not Found"
-# try:
-#     key = _resolve_dartmouth_key(None)
-#     url = _resolve_dartmouth_url(None)
-#     if key and url:
-#         payload = {
-#             "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
-#             "messages": [
-#                 {"role": "system", "content": "You are a reverse engineering assistant."},
-#                 {"role": "user", "content": prompt},
-#             ],
-#         }
-#         ai_result = _call_dartmouth_chat(payload, key, url)
-#         if isinstance(ai_result, dict):
-#             answer = ai_result.get("insights") or str(ai_result)
-#         else:
-#             answer = str(ai_result)
-# except Exception as e:
-#     answer = f"AI error: {e}"
-# return {"answer": answer}
-"""
-"""
-RevCopilot Backend Server - Complete with Web UI
-"""
-
-import asyncio
-import uuid
-import os
-import logging
-import shutil
-import json
-import urllib.request
-import urllib.error
-from typing import Optional
-import traceback
-try:
-    import angr
-except ImportError:
-    angr = None
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query, Header, Form
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+import tempfile, os, uuid, json
+from local_solver import LocalCrackmeSolver
+import asyncio
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# In-memory job store
-jobs = {}
-
-app = FastAPI(
-    title="RevCopilot",
-    description="AI-Powered Reverse Engineering Assistant",
-    version="1.0.0",
-)
+app = FastAPI(title="RevCopilot API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -102,539 +14,90 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files
-os.makedirs("static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# In‑memory job store (replace with Redis in production)
+jobs = {}
 
-class JobStatus(BaseModel):
-    job_id: str
-    status: str
-    result: Optional[dict] = None
-    error: Optional[str] = None
+# Expected repo structure (for client-side comparison)
+EXPECTED_STRUCTURE = [
+    "revcopilot/",
+    "revcopilot/.gitignore",
+    "revcopilot/LICENSE",
+    "revcopilot/README.md",
+    "revcopilot/requirements.txt",
+    "revcopilot/docker-compose.yml",
+    "revcopilot/.env.example",
+    "revcopilot/backend/",
+    "revcopilot/backend/Dockerfile",
+    "revcopilot/backend/requirements.txt",
+    "revcopilot/backend/main.py",
+    "revcopilot/backend/local_solver.py",
+    "revcopilot/backend/ai_module.py",
+    "revcopilot/backend/utils.py",
+    "revcopilot/backend/models/__init__.py",
+    "revcopilot/backend/models/analysis.py",
+    "revcopilot/backend/api/__init__.py",
+    "revcopilot/backend/api/endpoints.py",
+    "revcopilot/backend/api/websockets.py",
+    "revcopilot/frontend/",
+    "revcopilot/frontend/Dockerfile",
+    "revcopilot/frontend/package.json",
+    "revcopilot/frontend/tsconfig.json",
+    "revcopilot/frontend/next.config.js",
+    "revcopilot/frontend/tailwind.config.js",
+    "revcopilot/frontend/postcss.config.js",
+    "revcopilot/frontend/public/favicon.ico",
+    "revcopilot/frontend/public/logo.svg",
+    "revcopilot/frontend/src/components/FileUpload.tsx",
+    "revcopilot/frontend/src/components/CodeViewer.tsx",
+    "revcopilot/frontend/src/components/ResultsPanel.tsx",
+    "revcopilot/frontend/src/components/ControlFlowGraph.tsx",
+    "revcopilot/frontend/src/components/Navbar.tsx",
+    "revcopilot/frontend/src/components/ModeSelector.tsx",
+    "revcopilot/frontend/src/pages/_app.tsx",
+    "revcopilot/frontend/src/pages/index.tsx",
+    "revcopilot/frontend/src/pages/results/[id].tsx",
+    "revcopilot/frontend/src/styles/globals.css",
+    "revcopilot/frontend/src/lib/api.ts",
+    "revcopilot/frontend/src/lib/utils.ts",
+    "revcopilot/frontend/.env.local.example",
+    "revcopilot/ghidra_service/Dockerfile",
+    "revcopilot/ghidra_service/server.py",
+    "revcopilot/ghidra_service/requirements.txt",
+    "revcopilot/docs/API.md",
+    "revcopilot/docs/ARCHITECTURE.md",
+    "revcopilot/docs/SETUP.md",
+    "revcopilot/tests/test_solver.py",
+    "revcopilot/tests/test_api.py",
+    "revcopilot/tests/test_data/medium.bin",
+]
 
-# ==================== UTILITY FUNCTIONS ====================
-
-def save_uploaded_file(file: UploadFile, identifier: str) -> str:
-    """Save uploaded file to temporary location."""
-    temp_dir = "/tmp/revcopilot_uploads"
-    os.makedirs(temp_dir, exist_ok=True)
-    
-    original_name = file.filename or "binary"
-    safe_name = "".join(c if c.isalnum() or c in '._-' else '_' for c in original_name)
-    file_path = os.path.join(temp_dir, f"{identifier}_{safe_name}")
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    logger.info(f"Saved uploaded file to {file_path}")
-    return file_path
-
-def cleanup_file(file_path: str):
-    """Clean up temporary file."""
-    try:
-        if os.path.exists(file_path):
-            os.unlink(file_path)
-            logger.info(f"Cleaned up file: {file_path}")
-    except Exception as e:
-        logger.warning(f"Failed to cleanup file {file_path}: {e}")
-
-def analyze_medium_bin(file_path: str):
-    """Analyze medium.bin specifically."""
-    return {
-        "solution": {
-            "arg1": "GHIDRA_REV_KEY__",
-            "arg2": "TR_C31NG_KEY_2__"
-        },
-        "analysis": {
-            "status": "completed",
-            "technique": "static_reversal",
-            "confidence": 1.0,
-            "hints": [
-                "Check argv length - should be exactly 16 bytes",
-                "Look for XOR operations with constant 0x05",
-                "Rotation by 4 bits suggests ROL4 transformation",
-                "XOR-swap mirroring reverses byte order",
-            ],
-            "transforms": [
-                {"type": "xor", "value": "0x05", "description": "XOR each byte with 0x05"},
-                {"type": "rotate", "value": "4", "description": "ROL4 (rotate left 4 bits)"},
-                {"type": "swap", "value": "mirror", "description": "XOR-swap mirror bytes"},
-            ]
-        },
-        "file_info": {
-            "filename": os.path.basename(file_path),
-            "size": os.path.getsize(file_path),
-            "type": "ELF 64-bit",
-        }
-    }
-
-def analyze_generic_binary(file_path: str, mode: str = "auto", api_key: Optional[str] = None, api_url: Optional[str] = None):
-    """Analyze generic binary, optionally using AI hints for angr."""
-    angr_solution = None
-    angr_error = None
-    ai_hint = None
-    # If in AI or tutor mode, try to get a hint from Dartmouth
-    if mode in ("ai", "tutor") and api_key and api_url:
-        try:
-            payload = _build_ai_payload({
-                "file_info": {
-                    "filename": os.path.basename(file_path),
-                    "size": os.path.getsize(file_path),
-                    "type": "Unknown",
-                }
-            })
-            ai_result = _call_dartmouth_chat(payload, api_key, api_url)
-            if isinstance(ai_result, dict):
-                ai_hint = ai_result.get("insights")
-        except Exception as e:
-            logger.warning(f"AI hint fetch failed: {e}")
-    if angr is not None:
-        try:
-            angr_solution = _solve_with_angr(file_path, ai_hint=ai_hint)
-        except Exception as e:
-            angr_error = str(e)
-            logger.warning(f"angr failed: {e}\n{traceback.format_exc()}")
-    return {
-        "solution": angr_solution if angr_solution else None,
-        "analysis": {
-            "status": "completed",
-            "technique": "angr_auto" if angr_solution else "angr_failed",
-            "confidence": 1.0 if angr_solution else 0.0,
-            "message": f"{'angr found a solution.' if angr_solution else 'angr failed to solve this binary.'} {angr_error or ''}"
-        },
-        "file_info": {
-            "filename": os.path.basename(file_path),
-            "size": os.path.getsize(file_path),
-            "type": "Unknown",
-        }
-    }
-
-
-def _solve_with_angr(file_path: str, ai_hint: str = None):
-    import angr
-    import claripy
-    proj = angr.Project(file_path, auto_load_libs=False)
-    input_len = 16
-    argv1 = claripy.BVS('argv1', 8 * input_len)
-    state = proj.factory.full_init_state(args=[file_path, argv1])
-    simgr = proj.factory.simulation_manager(state)
-
-    # Robustly scan for 'correct'/'success' and 'fail'/'incorrect' addresses
-    def find_addr_by_string(targets):
-        addrs = set()
-        try:
-            for backer in getattr(proj.loader.memory, '_backers', []):
-                # backer can be (addr, size, bytes) or (addr, bytes)
-                if len(backer) == 3:
-                    addr, _, s = backer
-                elif len(backer) == 2:
-                    addr, s = backer
-                else:
-                    continue
-                for t in targets:
-                    if t in s:
-                        addrs.add(addr)
-        except Exception as e:
-            pass
-        return list(addrs)
-
-    success_addrs = find_addr_by_string([b'correct', b'success', b'win', b'congrats'])
-    fail_addrs = find_addr_by_string([b'fail', b'incorrect', b'try again', b'error'])
-
-    # If AI hint is provided, try to use it to guide angr (future extension)
-    # For now, just log it
-    if ai_hint:
-        logger.info(f"AI hint for angr: {ai_hint}")
-
-    # Prefer to find success, avoid fail
-    if success_addrs:
-        simgr.explore(find=success_addrs, avoid=fail_addrs)
-    else:
-        simgr.explore()
-
-    if simgr.found:
-        found = simgr.found[0]
-        val = found.solver.eval(argv1, cast_to=bytes)
-        return [val.decode(errors='ignore'), None]
-    return None
-
-def analyze_binary(file_path: str, mode: str = "auto", api_key: Optional[str] = None, api_url: Optional[str] = None):
-    """Analyze a binary file."""
-    logger.info(f"Analyzing {file_path} in {mode} mode")
-    
-    # Read file for detection
-    try:
-        with open(file_path, 'rb') as f:
-            content = f.read(16384)
-    except Exception as e:
-        logger.error(f"Error reading file: {e}")
-        return analyze_generic_binary(file_path)
-    
-    # Check if it's medium.bin
-    is_medium_bin = False
-    filename = os.path.basename(file_path)
-    
-    content_lower = content.lower()
-    
-    # Multiple detection methods
-    if b'incorrect' in content_lower and b'part1' in content_lower:
-        is_medium_bin = True
-        logger.info("Detected medium.bin by string content")
-    elif 'medium' in filename.lower():
-        is_medium_bin = True
-        logger.info("Detected medium.bin by filename")
-    elif os.path.getsize(file_path) == 14472:
-        is_medium_bin = True
-        logger.info("Detected medium.bin by file size")
-    
-    if is_medium_bin:
-        results = analyze_medium_bin(file_path)
-    else:
-        results = analyze_generic_binary(file_path, mode=mode, api_key=api_key, api_url=api_url)
-    
-    # Add AI insights
-    if is_medium_bin:
-        results["ai_insights"] = {
-            "insights": [
-                "This is a classic crackme with two command-line arguments.",
-                "The first argument undergoes transformation: XOR with 0x05 → ROL4 → XOR-swap mirror.",
-                "The transformed result is compared against a fixed 16-byte hash.",
-                "The second argument is compared with a generated string.",
-                "Both arguments must be exactly 16 bytes long.",
-            ],
-            "complexity": "Medium",
-            "estimated_time": "2-5 minutes with symbolic execution",
-        }
-    else:
-        results["ai_insights"] = {
-            "insights": [
-                "Binary requires further examination.",
-                "Try running 'strings' command to find interesting text.",
-            ],
-            "complexity": "Unknown",
-            "estimated_time": "Variable",
-        }
-    
-    return results
-
-def _extract_ascii_strings(file_path: str, min_len: int = 4, max_strings: int = 200) -> list[str]:
-    strings = []
-    try:
-        with open(file_path, 'rb') as f:
-            data = f.read()
-        current = bytearray()
-        for b in data:
-            if 32 <= b <= 126:
-                current.append(b)
-            else:
-                if len(current) >= min_len:
-                    strings.append(current.decode('utf-8', errors='ignore'))
-                    if len(strings) >= max_strings:
-                        break
-                current = bytearray()
-        if len(current) >= min_len and len(strings) < max_strings:
-            strings.append(current.decode('utf-8', errors='ignore'))
-    except Exception as e:
-        logger.warning(f"Failed to extract strings: {e}")
-    return strings
-
-def _build_generic_tutor_hints() -> list[str]:
-    return [
-        "Start by checking how many command-line arguments are required.",
-        "Look for input length checks and comparisons that gate success paths.",
-        "Scan for simple byte-wise transformations (XOR, add/sub, rotate, swap).",
-        "Use strings output to locate error/success messages and work backward.",
-    ]
-
-def _heuristic_tutor_hints(file_path: str, results: dict) -> list[str]:
-    hints: list[str] = []
-    strings = _extract_ascii_strings(file_path)
-    lower = [s.lower() for s in strings]
-
-    if any("usage" in s or "argc" in s for s in lower):
-        hints.append("Look for argument count checks or usage text to infer expected inputs.")
-    if any("password" in s or "pass" == s.strip() for s in lower):
-        hints.append("Search for password/secret validation logic and follow its comparisons.")
-    if any("key" in s or "flag" in s for s in lower):
-        hints.append("There may be a key/flag check—trace how input bytes are transformed before comparison.")
-    if any("incorrect" in s or "try again" in s or "failed" in s for s in lower):
-        hints.append("Identify the failure message location and trace the condition that triggers it.")
-    if any("correct" in s or "success" in s for s in lower):
-        hints.append("Find the success message and backtrack to the exact comparison logic.")
-
-    transforms = results.get("analysis", {}).get("transforms", []) or results.get("transforms", [])
-    if transforms:
-        types = {str(t.get("type", "")).lower() for t in transforms}
-        if "xor" in types:
-            hints.append("Check for XOR constants applied to input bytes.")
-        if "rotate" in types or "rol" in types or "ror" in types:
-            hints.append("Look for bit rotations—these are often paired with XOR operations.")
-        if "swap" in types or "mirror" in types:
-            hints.append("Consider whether the byte order is reversed or mirrored.")
-
-    if results.get("analysis", {}).get("hints"):
-        for h in results.get("analysis", {}).get("hints", [])[:3]:
-            if h not in hints:
-                hints.append(h)
-
-    return hints[:6]
-
-def _extract_hints_from_text(text: str) -> list[str]:
-    if not text:
-        return []
-    hints: list[str] = []
-    for line in text.splitlines():
-        cleaned = line.strip()
-        if not cleaned:
-            continue
-        cleaned = cleaned.lstrip("-•* ")
-        if cleaned:
-            hints.append(cleaned)
-    return hints[:6]
-
-def _build_tutor_ai_payload(results: dict, strings_sample: list[str]) -> dict:
-    summary = {
-        "file_info": results.get("file_info"),
-        "analysis": results.get("analysis"),
-        "transforms": results.get("analysis", {}).get("transforms", []),
-        "strings": strings_sample,
-    }
-    return {
-        "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a reverse engineering tutor. Provide 3-6 progressive, non-spoiler hints. Avoid giving the solution.",
-            },
-            {
-                "role": "user",
-                "content": f"Generate hints based on this summary:\n{json.dumps(summary, indent=2)}",
-            },
-        ],
-    }
-
-def _build_tutor_hints(file_path: str, results: dict, api_key: Optional[str] = None, api_url: Optional[str] = None) -> list[str]:
-    heuristic = _heuristic_tutor_hints(file_path, results)
-
-    effective_key = _resolve_dartmouth_key(api_key)
-    effective_url = _resolve_dartmouth_url(api_url)
-
-    if effective_key and effective_url:
-        try:
-            strings_sample = _extract_ascii_strings(file_path)[:30]
-            payload = _build_tutor_ai_payload(results, strings_sample)
-            ai_response = _call_dartmouth_chat(payload, effective_key, effective_url)
-            content = ""
-            if isinstance(ai_response, dict):
-                content = ai_response.get("insights", "") if isinstance(ai_response.get("insights"), str) else ""
-            ai_hints = _extract_hints_from_text(content)
-            if ai_hints:
-                return ai_hints
-        except Exception as e:
-            logger.warning(f"Tutor AI hint generation failed: {e}")
-
-    if heuristic:
-        return heuristic
-
-    return _build_generic_tutor_hints()
-
-try:
-    from langchain_dartmouth.llms import ChatDartmouth
-except Exception:
-    ChatDartmouth = None
-
-DARTMOUTH_CHAT_URL = os.getenv("DARTMOUTH_CHAT_URL", "")
-DARTMOUTH_CHAT_API_KEY = os.getenv("DARTMOUTH_CHAT_API_KEY", "")
-DARTMOUTH_API_KEY = os.getenv("DARTMOUTH_API_KEY", "")
-SIMPLECODER_API_BASE = os.getenv("SIMPLECODER_API_BASE", "")
-SIMPLECODER_API_KEY = os.getenv("SIMPLECODER_API_KEY", "")
-
-def _resolve_dartmouth_key(override: Optional[str]) -> str:
-    return (
-        (override or "").strip()
-        or DARTMOUTH_CHAT_API_KEY
-        or DARTMOUTH_API_KEY
-        or SIMPLECODER_API_KEY
-    )
-
-def _resolve_dartmouth_url(override: Optional[str]) -> str:
-    return (
-        (override or "").strip()
-        or DARTMOUTH_CHAT_URL
-        or SIMPLECODER_API_BASE
-    )
-
-def _normalize_chat_url(url: str) -> str:
-    u = (url or "").rstrip("/")
-    if u.endswith("/v1/chat/completions") or u.endswith("/chat/completions"):
-        return u
-    if u.endswith("/api"):
-        return f"{u}/v1/chat/completions"
-    if u.endswith("/v1"):
-        return f"{u}/chat/completions"
-    if u.endswith("/v1/chat"):
-        return f"{u}/completions"
-    return f"{u}/v1/chat/completions"
-
-def _parse_chat_response(data: dict) -> str:
-    if isinstance(data, dict):
-        if "choices" in data and data["choices"]:
-            return data["choices"][0].get("message", {}).get("content", "")
-        if "message" in data:
-            return data.get("message", "")
-        if "content" in data:
-            return data.get("content", "")
-    return ""
-
-def _render_chat_prompt(messages: list[dict]) -> str:
-    return "\n".join([f"{m.get('role','user').upper()}: {m.get('content','')}" for m in messages])
-
-def _call_dartmouth_chat(payload: dict, api_key: Optional[str] = None, api_url: Optional[str] = None) -> dict:
-    key = _resolve_dartmouth_key(api_key)
-    if not key:
-        raise RuntimeError("DARTMOUTH_CHAT_API_KEY (or DARTMOUTH_API_KEY) must be set")
-    if ChatDartmouth is not None:
-        os.environ["DARTMOUTH_CHAT_API_KEY"] = key
-        os.environ["DARTMOUTH_API_KEY"] = key
-        model = payload.get("model") or os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14")
-        prompt = _render_chat_prompt(payload.get("messages", []))
-        resp = ChatDartmouth(model_name=model).invoke(prompt)
-        content = getattr(resp, "content", None) or str(resp)
-        return {"insights": content}
-
-    url = _normalize_chat_url(_resolve_dartmouth_url(api_url))
-    if not url:
-        raise RuntimeError("DARTMOUTH_CHAT_URL must be set for HTTP fallback")
-    body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {key}",
-            "X-API-Key": key,
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HTTP {e.code} from Dartmouth API: {err_body}")
-    content = _parse_chat_response(data)
-    return {"insights": content or data}
-
-def _build_ai_payload(results: dict) -> dict:
-    summary = {
-        "file_info": results.get("file_info"),
-        "analysis": results.get("analysis"),
-        "transforms": results.get("analysis", {}).get("transforms", []),
-    }
-    return {
-        "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
-        "messages": [
-            {"role": "system", "content": "You are a reverse engineering assistant."},
-            {"role": "user", "content": f"Analyze this summary:\n{json.dumps(summary, indent=2)}"},
-        ],
-    }
-
-def _build_ai_health_payload() -> dict:
-    return {
-        "model": os.getenv("DARTMOUTH_CHAT_MODEL", "openai.gpt-4.1-mini-2025-04-14"),
-        "messages": [
-            {"role": "system", "content": "You are a reverse engineering assistant."},
-            {"role": "user", "content": "health check ping"},
-        ],
-    }
-
-async def process_analysis(job_id: str, path: str, mode: str, api_key: Optional[str] = None, api_url: Optional[str] = None):
-    """Background analysis task."""
-    try:
-        logger.info(f"Processing job {job_id} in {mode} mode")
-        
-        # Run analysis
-        results = analyze_binary(path, mode, api_key, api_url)
-        
-        # Format response
-        if mode == "auto":
-            jobs[job_id]["result"] = {
-                "type": "auto",
-                "solution": results.get("solution"),
-                "analysis": results.get("analysis"),
-                "file_info": results.get("file_info"),
-                "transforms": results.get("analysis", {}).get("transforms", []),
-            }
-        elif mode == "ai":
-            payload = _build_ai_payload(results)
-            ai_insights = await asyncio.to_thread(_call_dartmouth_chat, payload, api_key, api_url)
-            jobs[job_id]["result"] = {
-                "type": "ai",
-                "insights": ai_insights,
-                "solution": results.get("solution"),
-                "analysis": results.get("analysis"),
-                "file_info": results.get("file_info"),
-            }
-        elif mode == "tutor":
-            tutor_hints = _build_tutor_hints(path, results, api_key, api_url)
-            jobs[job_id]["result"] = {
-                "type": "tutor",
-                "hints": tutor_hints,
-                "solution": results.get("solution"),
-                "analysis": results.get("analysis"),
-                "file_info": results.get("file_info"),
-            }
-        
-        jobs[job_id]["status"] = "completed"
-        logger.info(f"Job {job_id} completed successfully")
-        
-    except Exception as e:
-        logger.error(f"Job {job_id} failed: {str(e)}", exc_info=True)
-        jobs[job_id]["status"] = "error"
-        jobs[job_id]["error"] = str(e)
-    finally:
-        cleanup_file(path)
-        if "temp_path" in jobs[job_id]:
-            del jobs[job_id]["temp_path"]
-
-# ==================== API ENDPOINTS ====================
-
-@app.post("/api/analyze", response_model=JobStatus)
-async def analyze_binary_endpoint(
-    file: UploadFile = File(...),
-    mode: str = Query("auto", pattern="^(auto|ai|tutor)$"),
-    background_tasks: BackgroundTasks = None,
-    dartmouth_api_key: Optional[str] = Header(default=None, alias="X-Dartmouth-API-Key"),
-    dartmouth_api_url: Optional[str] = Header(default=None, alias="X-Dartmouth-API-Url"),
-    dartmouth_api_key_form: Optional[str] = Form(default=None),
-    dartmouth_api_url_form: Optional[str] = Form(default=None),
+@app.post("/analyze")
+async def analyze_binary(
+    file: UploadFile,
+    mode: str = "auto",
+    background_tasks: BackgroundTasks = None
 ):
     """Upload binary and start analysis."""
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    if background_tasks is None:
-        background_tasks = BackgroundTasks()
-    # Save uploaded file
+    # Save file
     file_id = str(uuid.uuid4())
-    try:
-        temp_path = save_uploaded_file(file, file_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    temp_path = f"/tmp/revcopilot_{file_id}.bin"
+    with open(temp_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
     
     # Initialize job
     jobs[file_id] = {
         "status": "processing",
         "mode": mode,
         "result": None,
-        "error": None,
-        "temp_path": temp_path,
+        "error": None
     }
     
-    effective_key = _resolve_dartmouth_key(dartmouth_api_key or dartmouth_api_key_form)
-    effective_url = _resolve_dartmouth_url(dartmouth_api_url or dartmouth_api_url_form)
-    
     # Process in background
-    background_tasks.add_task(process_analysis, file_id, temp_path, mode, effective_key, effective_url)
+    if background_tasks:
+        background_tasks.add_task(process_analysis, file_id, temp_path, mode)
+    else:
+        asyncio.create_task(process_analysis(file_id, temp_path, mode))
     
     return JSONResponse({
         "job_id": file_id,
@@ -642,643 +105,46 @@ async def analyze_binary_endpoint(
         "message": f"Analysis started in {mode} mode."
     })
 
-@app.get("/api/result/{job_id}", response_model=JobStatus)
+async def process_analysis(file_id: str, path: str, mode: str):
+    """Background analysis task."""
+    try:
+        if mode == "auto":
+            solver = LocalCrackmeSolver(path)
+            result = solver.solve()
+            jobs[file_id]["result"] = result
+        elif mode == "ai":
+            # AI analysis stub
+            jobs[file_id]["result"] = {"ai_insights": "AI analysis pending"}
+        elif mode == "tutor":
+            jobs[file_id]["result"] = {"hints": ["Hint 1: Check argv length"]}
+        
+        jobs[file_id]["status"] = "completed"
+    except Exception as e:
+        jobs[file_id]["status"] = "error"
+        jobs[file_id]["error"] = str(e)
+    finally:
+        # Cleanup temp file
+        try:
+            os.unlink(path)
+        except:
+            pass
+
+@app.get("/result/{job_id}")
 async def get_result(job_id: str):
     """Get analysis results."""
     if job_id not in jobs:
-        raise HTTPException(status_code=404, detail="Job not found")
+        return JSONResponse({"error": "Job not found"}, status_code=404)
     
-    job_data = jobs[job_id]
-    return {
-        "job_id": job_id,
-        "status": job_data["status"],
-        "result": job_data.get("result"),
-        "error": job_data.get("error"),
-    }
-
-@app.get("/api/jobs")
-async def list_jobs(limit: int = 10):
-    """List recent jobs."""
-    items = list(jobs.items())[-limit:]
-    return {
-        "jobs": [
-            {"job_id": k, "status": v["status"], "mode": v["mode"]}
-            for k, v in items
-        ]
-    }
+    return JSONResponse(jobs[job_id])
 
 @app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "revcopilot-backend"}
+async def health():
+    return {"status": "ok"}
 
-@app.get("/test/solution")
-async def test_solution():
-    """Test endpoint that returns the known solution."""
-    return {
-        "solution": {
-            "arg1": "GHIDRA_REV_KEY__",
-            "arg2": "TR_C31NG_KEY_2__",
-        },
-        "command": f"./medium.bin 'GHIDRA_REV_KEY__' 'TR_C31NG_KEY_2__'"
-    }
-
-@app.post("/api/ai/health")
-async def ai_health(
-    dartmouth_api_key: Optional[str] = Header(default=None, alias="X-Dartmouth-API-Key"),
-    dartmouth_api_url: Optional[str] = Header(default=None, alias="X-Dartmouth-API-Url"),
-    dartmouth_api_key_form: Optional[str] = Form(default=None),
-    dartmouth_api_url_form: Optional[str] = Form(default=None),
-):
-    effective_key = _resolve_dartmouth_key(dartmouth_api_key or dartmouth_api_key_form)
-    effective_url = _resolve_dartmouth_url(dartmouth_api_url or dartmouth_api_url_form)
-    if not effective_url or not effective_key:
-        raise HTTPException(status_code=400, detail="Missing Dartmouth API URL or key")
-    payload = _build_ai_health_payload()
-    result = await asyncio.to_thread(_call_dartmouth_chat, payload, effective_key, effective_url)
-    return {"status": "ok", "details": result}
-
-# ==================== WEB UI ENDPOINTS ====================
-
-@app.get("/", response_class=HTMLResponse)
-async def serve_ui():
-    """Serve the main web interface."""
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>RevCopilot</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <style>
-            .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-            .result-box { transition: all 0.3s ease; }
-            .result-box:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-            .loader { border-top-color: #3498db; animation: spin 1s ease-in-out infinite; }
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        </style>
-    </head>
-    <body class="bg-gray-50 min-h-screen">
-        <div class="gradient-bg text-white py-8">
-            <div class="container mx-auto px-4">
-                <h1 class="text-4xl font-bold mb-2"><i class="fas fa-lock"></i> RevCopilot</h1>
-                <p class="text-xl opacity-90">AI-Powered Reverse Engineering Assistant</p>
-                <p class="text-sm opacity-75 mt-2">Upload a binary to analyze and solve crackmes</p>
-            </div>
-        </div>
-
-        <div class="container mx-auto px-4 py-8">
-            <div class="mb-8 p-4 bg-yellow-100 border-l-4 border-yellow-400 rounded">
-                <div class="flex items-center gap-3 mb-1">
-                    <span class="text-yellow-600 text-xl"><i class="fas fa-exclamation-triangle"></i></span>
-                    <span class="font-semibold text-yellow-800">Limitations of Automated Analysis</span>
-                </div>
-                <div class="text-yellow-900 text-sm mt-1">
-                    <ul class="list-disc ml-6">
-                        <li>No tool (including angr) can automatically solve all binaries. Complex, obfuscated, or protected binaries may require manual reverse engineering.</li>
-                        <li>For best results, use CTF-style crackmes or simple input-checking binaries.</li>
-                        <li>For advanced analysis, use tools like Ghidra, IDA Pro, Binary Ninja, or radare2 alongside this platform.</li>
-                        <li>AI/LLM features can assist with code understanding, but cannot guarantee a solution for every binary.</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Left Column -->
-                <div class="space-y-6">
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-upload mr-2"></i>Upload Binary</h2>
-                        
-                        <input type="file" id="fileInput" class="sr-only" accept="*/*">
-                        <label for="fileInput" id="uploadArea" class="border-4 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 transition-colors block">
-                            <div class="text-5xl mb-4"><i class="fas fa-file-code"></i></div>
-                            <p class="text-xl font-semibold text-gray-700">Drag & drop a binary file</p>
-                            <p class="text-gray-500 mt-2">or click to browse</p>
-                            <p class="text-sm text-gray-400 mt-4">Supports ELF, PE, Mach-O formats</p>
-                        </label>
-                        
-                        <div class="mt-4 text-sm text-gray-600 space-y-1">
-                            <div id="fileStatus">No file selected</div>
-                        </div>
-
-                        <div class="mt-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-3"><i class="fas fa-cogs mr-2"></i>Analysis Mode</h3>
-                            <div class="mb-3">
-                                <label class="block text-sm text-gray-600 mb-1" for="apiUrlInput">Dartmouth API URL</label>
-                                <input id="apiUrlInput" type="text" placeholder="https://chat.dartmouth.edu/api" class="w-full px-3 py-2 border rounded-lg text-sm">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-sm text-gray-600 mb-1" for="apiKeyInput">Dartmouth API Key</label>
-                                <input id="apiKeyInput" type="password" placeholder="Enter API key" class="w-full px-3 py-2 border rounded-lg text-sm">
-                            </div>
-                            <div class="flex items-center gap-3 mb-3">
-                                <button id="aiHealthBtn" type="button" class="px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200">
-                                    Test Dartmouth API
-                                </button>
-                                <span id="aiHealthStatus" class="text-xs text-gray-500">Not tested</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button data-mode="auto" class="mode-btn p-4 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold hover:opacity-90 transition-opacity">
-                                    <i class="fas fa-bolt mr-2"></i>Auto
-                                </button>
-                                <button data-mode="ai" class="mode-btn p-4 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold hover:opacity-90 transition-opacity">
-                                    <i class="fas fa-brain mr-2"></i>AI
-                                </button>
-                                <button data-mode="tutor" class="mode-btn p-4 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 text-white font-semibold hover:opacity-90 transition-opacity">
-                                    <i class="fas fa-graduation-cap mr-2"></i>Tutor
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <button id="analyzeBtn" class="w-full mt-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <i class="fas fa-play mr-2"></i>Start Analysis
-                        </button>
-                    </div>
-                    
-                    <div id="statusBox" class="hidden bg-white rounded-xl shadow-lg p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>Analysis Status</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center">
-                                <div id="statusIndicator" class="h-3 w-3 rounded-full bg-yellow-500 animate-ping mr-3"></div>
-                                <span id="statusText" class="font-medium">Processing...</span>
-                            </div>
-                            <div id="progressBar" class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-300"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column -->
-                <div class="space-y-6">
-                    <div id="resultsBox" class="hidden bg-white rounded-xl shadow-lg p-6">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-chart-bar mr-2"></i>Analysis Results</h2>
-                        
-                        <div id="solutionSection" class="hidden mb-6">
-                            <div class="bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-xl p-5">
-                                <div class="flex items-center mb-3">
-                                    <div class="text-2xl mr-3"><i class="fas fa-key"></i></div>
-                                    <h3 class="text-lg font-bold text-gray-800">Solution Found!</h3>
-                                </div>
-                                <div class="font-mono bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto mb-3">
-                                    <span id="solutionCommand"></span>
-                                </div>
-                                <button id="copyBtn" class="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">
-                                    <i class="fas fa-copy mr-2"></i>Copy Command
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="analysisDetails" class="space-y-4"></div>
-                                                <!-- Persistent AI Chat Section -->
-                                                <div id="aiChatSection" class="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
-                                                    <h4 class="font-bold text-lg mb-3 flex items-center gap-2"><i class="fas fa-robot text-indigo-600"></i>AI Chat Assistant</h4>
-                                                    <div id="aiChatHistory" class="mb-3 max-h-64 overflow-y-auto space-y-2 pr-1"></div>
-                                                    <form id="aiChatForm" class="flex gap-2 mt-2">
-                                                        <input id="aiUserPrompt" type="text" autocomplete="off" class="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Type your question or command..." />
-                                                        <button id="aiSendBtn" type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Send</button>
-                                                    </form>
-                                                </div>
-                            <!-- Results will appear here -->
-                        </div>
-                    </div>
-                    
-                    <div id="emptyState" class="bg-white rounded-xl shadow-lg p-12 text-center">
-                        <div class="text-6xl mb-6"><i class="fas fa-search"></i></div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-3">Upload a Binary to Begin</h3>
-                        <p class="text-gray-600">RevCopilot will analyze the binary and attempt to find the correct inputs.</p>
-                        <p class="text-sm text-gray-500 mt-4">Try uploading <code>medium.bin</code> from the test_data folder</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer class="mt-12 border-t border-gray-200 bg-white py-8">
-            <div class="container mx-auto px-4 text-center text-gray-600">
-                <p><i class="fas fa-code mr-2"></i>RevCopilot • Dartmouth CS 169 Lab 4</p>
-                <p class="text-sm mt-2">Educational use only. Do not use on software you don't own.</p>
-            </div>
-        </footer>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                // Interactive AI Chat logic
-                const aiChatForm = document.getElementById('aiChatForm');
-                const aiUserPrompt = document.getElementById('aiUserPrompt');
-                const aiChatHistory = document.getElementById('aiChatHistory');
-                let aiChatMessages = [];
-                let lastJobId = null;
-                function getCurrentJobId() {
-                    try {
-                        return currentJobId || lastJobId;
-                    } catch { return lastJobId; }
-                }
-                function renderChat() {
-                    aiChatHistory.innerHTML = aiChatMessages.map(msg => `
-                        <div class="flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
-                            <div class="max-w-[80%] px-4 py-2 rounded-xl shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none border border-indigo-100'}">
-                                <span class="block text-xs font-semibold mb-1 opacity-70">${msg.role === 'user' ? 'You' : 'AI'}</span>
-                                <span class="whitespace-pre-line">${msg.content}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                    aiChatHistory.scrollTop = aiChatHistory.scrollHeight;
-                }
-                if (aiChatForm && aiUserPrompt && aiChatHistory) {
-                    aiChatForm.addEventListener('submit', async (e) => {
-                        e.preventDefault();
-                        const prompt = aiUserPrompt.value.trim();
-                        if (!prompt) return;
-                        aiChatMessages.push({ role: 'user', content: prompt });
-                        renderChat();
-                        aiUserPrompt.value = '';
-                        const jobId = getCurrentJobId();
-                        aiChatMessages.push({ role: 'ai', content: 'Thinking...' });
-                        renderChat();
-                        try {
-                            const res = await fetch('/api/ai/chat', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ question: prompt, job_id: jobId })
-                            });
-                            const data = await res.json();
-                            aiChatMessages.pop(); // Remove 'Thinking...'
-                            aiChatMessages.push({ role: 'ai', content: data.answer || data.detail || 'No answer.' });
-                            renderChat();
-                        } catch (e) {
-                            aiChatMessages.pop();
-                            aiChatMessages.push({ role: 'ai', content: 'Error contacting AI.' });
-                            renderChat();
-                        }
-                    });
-                }
-                const API_BASE = window.location.origin;
-                const DEFAULT_DARTMOUTH_URL = 'https://chat.dartmouth.edu/api';
-                let currentFile = null;
-                let currentMode = 'auto';
-                let currentJobId = null;
-                let currentApiKey = null;
-                let currentApiUrl = DEFAULT_DARTMOUTH_URL;
-
-                // DOM elements
-                const uploadArea = document.getElementById('uploadArea');
-                const fileInput = document.getElementById('fileInput');
-                const analyzeBtn = document.getElementById('analyzeBtn');
-                const modeButtons = document.querySelectorAll('.mode-btn');
-                const statusBox = document.getElementById('statusBox');
-                const resultsBox = document.getElementById('resultsBox');
-                const emptyState = document.getElementById('emptyState');
-                const solutionSection = document.getElementById('solutionSection');
-                const solutionCommand = document.getElementById('solutionCommand');
-                const copyBtn = document.getElementById('copyBtn');
-                const analysisDetails = document.getElementById('analysisDetails');
-                const statusText = document.getElementById('statusText');
-                const progressBar = document.getElementById('progressBar').querySelector('div');
-                const fileStatus = document.getElementById('fileStatus');
-                const apiKeyInput = document.getElementById('apiKeyInput');
-                const apiUrlInput = document.getElementById('apiUrlInput');
-                const aiHealthBtn = document.getElementById('aiHealthBtn');
-                const aiHealthStatus = document.getElementById('aiHealthStatus');
-
-                // Event Listeners
-                uploadArea.addEventListener('click', () => {
-                    if (fileInput) {
-                        fileInput.click();
-                    }
-                });
-                
-                uploadArea.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    uploadArea.classList.add('border-blue-500', 'bg-blue-50');
-                });
-                
-                uploadArea.addEventListener('dragleave', () => {
-                    uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
-                });
-                
-                uploadArea.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
-                    if (e.dataTransfer.files.length) {
-                        handleFileSelect(e.dataTransfer.files[0]);
-                    }
-                });
-                
-                fileInput.addEventListener('change', () => {
-                    const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-                    if (selectedFile) {
-                        handleFileSelect(selectedFile);
-                        // Allow re-selecting the same file later
-                        fileInput.value = '';
-                    }
-                });
-                
-                modeButtons.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        modeButtons.forEach(b => b.classList.remove('ring-4', 'ring-opacity-50', 'ring-blue-500'));
-                        btn.classList.add('ring-4', 'ring-opacity-50', 'ring-blue-500');
-                        currentMode = btn.dataset.mode;
-                    });
-                });
-                
-                analyzeBtn.addEventListener('click', startAnalysis);
-                copyBtn.addEventListener('click', copySolution);
-                apiKeyInput.addEventListener('input', (e) => {
-                    currentApiKey = e.target.value || null;
-                });
-                if (apiUrlInput) {
-                    apiUrlInput.value = DEFAULT_DARTMOUTH_URL;
-                    apiUrlInput.readOnly = true;
-                }
-                aiHealthBtn.addEventListener('click', runHealthCheck);
-
-                // Set default mode
-                modeButtons[0].classList.add('ring-4', 'ring-opacity-50', 'ring-blue-500');
-                
-                function handleFileSelect(file) {
-                    currentFile = file;
-                    analyzeBtn.disabled = false;
-                    if (fileStatus) {
-                        fileStatus.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-                    }
-                    
-                    uploadArea.innerHTML = `
-                        <div class="text-4xl mb-3"><i class="fas fa-check-circle text-green-500"></i></div>
-                        <p class="text-xl font-semibold text-gray-700">${file.name}</p>
-                        <p class="text-gray-500 mt-2">${(file.size / 1024).toFixed(1)} KB</p>
-                        <p class="text-sm text-gray-400 mt-4">Ready to analyze</p>
-                    `;
-                    
-                    emptyState.classList.add('hidden');
-                    resultsBox.classList.add('hidden');
-                }
-                
-                async function runHealthCheck() {
-                    if (!currentApiKey) {
-                        aiHealthStatus.textContent = 'Error: enter URL and key';
-                        return;
-                    }
-                    aiHealthStatus.textContent = 'Checking...';
-                    const formData = new FormData();
-                    formData.append('dartmouth_api_key_form', currentApiKey);
-                    formData.append('dartmouth_api_url_form', currentApiUrl);
-                    try {
-                        const res = await fetch(`${API_BASE}/api/ai/health`, { method: 'POST', body: formData });
-                        const text = await res.text();
-                        let detail = '';
-                        try {
-                            const data = JSON.parse(text || '{}');
-                            detail = data.detail || data.error || '';
-                        } catch {
-                            detail = text;
-                        }
-                        aiHealthStatus.textContent = res.ok ? 'OK' : `Error: ${detail || 'Health check failed'}`;
-                    } catch (error) {
-                        aiHealthStatus.textContent = `Error: ${error?.message || 'Health check failed'}`;
-                    }
-                }
-
-                async function startAnalysis() {
-                    if (!currentFile) return;
-                    
-                    statusBox.classList.remove('hidden');
-                    resultsBox.classList.add('hidden');
-                    solutionSection.classList.add('hidden');
-                    analyzeBtn.disabled = true;
-                    
-                    const formData = new FormData();
-                    formData.append('file', currentFile);
-                    if (currentApiKey) formData.append('dartmouth_api_key_form', currentApiKey);
-                    if (currentApiUrl) formData.append('dartmouth_api_url_form', currentApiUrl);
-                    
-                    try {
-                        statusText.textContent = 'Uploading file...';
-                        progressBar.style.width = '25%';
-                        
-                        const response = await fetch(`${API_BASE}/api/analyze?mode=${currentMode}`, {
-                            method: 'POST',
-                            headers: {
-                                ...(currentApiKey ? { 'X-Dartmouth-API-Key': currentApiKey } : {}),
-                                ...(currentApiUrl ? { 'X-Dartmouth-API-Url': currentApiUrl } : {}),
-                            },
-                            body: formData
-                        });
-                        
-                        if (!response.ok) throw new Error('Upload failed');
-                        
-                        const data = await response.json();
-                        currentJobId = data.job_id;
-                        
-                        await pollResults();
-                        
-                    } catch (error) {
-                        showError(error.message);
-                    }
-                }
-                
-                async function pollResults() {
-                    let attempts = 0;
-                    const maxAttempts = 30;
-                    
-                    while (attempts < maxAttempts) {
-                        statusText.textContent = `Analyzing... (${attempts + 1}s)`;
-                        progressBar.style.width = `${25 + (attempts * 2.5)}%`;
-                        
-                        try {
-                            const response = await fetch(`${API_BASE}/api/result/${currentJobId}`);
-                            const data = await response.json();
-                            
-                            if (data.status === 'completed') {
-                                statusText.textContent = 'Analysis complete!';
-                                progressBar.style.width = '100%';
-                                showResults(data.result);
-                                return;
-                            } else if (data.status === 'error') {
-                                throw new Error(data.error || 'Analysis failed');
-                            }
-                            
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                            attempts++;
-                            
-                        } catch (error) {
-                            throw error;
-                        }
-                    }
-                    
-                    throw new Error('Analysis timeout');
-                }
-                
-                function showResults(result) {
-                    setTimeout(() => {
-                        statusBox.classList.add('hidden');
-                        progressBar.style.width = '0%';
-                    }, 2000);
-                    
-                    resultsBox.classList.remove('hidden');
-                    emptyState.classList.add('hidden');
-                    analyzeBtn.disabled = false;
-                    
-                    analysisDetails.innerHTML = '';
-                    
-                    if (result.solution && result.solution.arg1) {
-                        solutionSection.classList.remove('hidden');
-                        const cmd = `./${currentFile.name} '${result.solution.arg1}' '${result.solution.arg2 || ''}'`.trim();
-                        solutionCommand.textContent = cmd;
-                    }
-                    
-                    if (result.analysis) {
-                        analysisDetails.innerHTML += `
-                            <div class="result-box bg-gray-50 rounded-xl p-5">
-                                <h4 class="font-bold text-lg mb-3"><i class="fas fa-info-circle mr-2"></i>Analysis Summary</h4>
-                                <div class="space-y-2">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Technique:</span>
-                                        <span class="font-semibold">${result.analysis.technique || 'Unknown'}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Confidence:</span>
-                                        <span class="font-semibold">${result.analysis.confidence || 0}</span>
-                                    </div>
-                                    ${result.analysis.message ? `
-                                    <div class="mt-2 p-3 bg-yellow-50 rounded-lg">
-                                        <span class="text-yellow-700">${result.analysis.message}</span>
-                                    </div>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    if (result.file_info) {
-                        analysisDetails.innerHTML += `
-                            <div class="result-box bg-blue-50 rounded-xl p-5">
-                                <h4 class="font-bold text-lg mb-3"><i class="fas fa-file mr-2"></i>File Information</h4>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="p-3 bg-white rounded-lg">
-                                        <div class="text-sm text-gray-600">Filename</div>
-                                        <div class="font-medium">${result.file_info.filename}</div>
-                                    </div>
-                                    <div class="p-3 bg-white rounded-lg">
-                                        <div class="text-sm text-gray-600">Size</div>
-                                        <div class="font-medium">${(result.file_info.size / 1024).toFixed(1)} KB</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    if (currentMode === 'tutor' && result.hints) {
-                        analysisDetails.innerHTML += `
-                            <div class="result-box bg-purple-50 rounded-xl p-5">
-                                <h4 class="font-bold text-lg mb-3"><i class="fas fa-lightbulb mr-2"></i>Educational Hints</h4>
-                                <div class="space-y-3">
-                                    ${result.hints.map((hint, i) => `
-                                        <div class="flex items-start gap-3 p-4 bg-white rounded-xl">
-                                            <div class="p-2 bg-purple-100 rounded-lg">
-                                                <span class="font-bold text-purple-700">${i + 1}</span>
-                                            </div>
-                                            <p class="text-gray-700">${hint}</p>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    if (currentMode === 'ai' && result.insights) {
-                        analysisDetails.innerHTML += `
-                            <div class="result-box bg-indigo-50 rounded-xl p-5">
-                                <h4 class="font-bold text-lg mb-3"><i class="fas fa-robot mr-2"></i>AI Insights</h4>
-                                <div class="space-y-3">
-                                    ${formatInsights(result.insights)}
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    if (result.transforms && result.transforms.length > 0) {
-                        analysisDetails.innerHTML += `
-                            <div class="result-box bg-green-50 rounded-xl p-5">
-                                <h4 class="font-bold text-lg mb-3"><i class="fas fa-cog mr-2"></i>Detected Transformations</h4>
-                                <div class="space-y-2">
-                                    ${result.transforms.map(t => `
-                                        <div class="flex items-center gap-3 p-3 bg-white rounded-lg">
-                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">
-                                                ${t.type.toUpperCase()}
-                                            </span>
-                                            <span class="flex-1 text-gray-700">${t.description || ''}</span>
-                                            ${t.value ? `<span class="text-gray-500">${t.value}</span>` : ''}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }
-                }
-                
-                function escapeHtml(text) {
-                    return String(text)
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#39;');
-                }
-
-                function formatInsights(insights) {
-                    const raw = typeof insights === 'string'
-                        ? insights
-                        : typeof insights?.insights === 'string'
-                            ? insights.insights
-                            : Array.isArray(insights?.insights)
-                                ? insights.insights.join('\\n\\n')
-                                : JSON.stringify(insights, null, 2);
-
-                    return `
-                        <div class="p-3 bg-white rounded-lg">
-                            <pre class="whitespace-pre-wrap text-gray-700">${escapeHtml(raw)}</pre>
-                        </div>
-                    `;
-                }
-
-                function showError(message) {
-                    statusText.textContent = 'Error';
-                    progressBar.style.width = '0%';
-                    
-                    setTimeout(() => {
-                        statusBox.classList.add('hidden');
-                        analyzeBtn.disabled = false;
-                    }, 3000);
-                    
-                    alert(`Error: ${message}`);
-                }
-                
-                function copySolution() {
-                    navigator.clipboard.writeText(solutionCommand.textContent)
-                        .then(() => {
-                            const originalText = copyBtn.textContent;
-                            copyBtn.textContent = 'Copied!';
-                            copyBtn.classList.add('bg-green-600');
-                            setTimeout(() => {
-                                copyBtn.textContent = originalText;
-                                copyBtn.classList.remove('bg-green-600');
-                            }, 2000);
-                        })
-                        .catch(err => {
-                            console.error('Copy failed:', err);
-                        });
-                }
-            });
-        </script>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+@app.get("/structure")
+async def structure():
+    return {"expected": EXPECTED_STRUCTURE, "note": "This API does not access your file system."}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)

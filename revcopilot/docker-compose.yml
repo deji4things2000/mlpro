@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV_FILE=.env
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - ENV_FILE=.env.local
+
+  ghidra_service:
+    build:
+      context: ./ghidra_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./ghidra_service:/app
+    ports:
+      - "5000:5000"
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
