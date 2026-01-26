@@ -1,0 +1,17 @@
+{
+    "folders": [
+        {
+            "path": "frontend"
+        },
+        {
+            "path": "backend"
+        },
+        {
+            "path": "connectors"
+        },
+        {
+            "path": "shared"
+        }
+    ],
+    "settings": {}
+}

@@ -1,0 +1,28 @@
+{
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true,
+        "source.organizeImports": true
+    },
+    "typescript.preferences.importModuleSpecifier": "shortest",
+    "eslint.validate": [
+        "javascript",
+        "typescript",
+        "react"
+    ],
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.git": true
+    },
+    "workbench.editor.enablePreview": false,
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    "jest.autoRun": {
+        "watch": true,
+        "onStartup": [
+            "all-tests"
+        ]
+    },
+    "jest.showCoverageOnLoad": true,
+    "testExplorer.useNativeTesting": true,
+    "testing.automaticallyOpenPeekView": "never"
+}
