@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniAnalytics - Universal Analytics Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --secondary: #8b5cf6;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, #1e1b4b 100%);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--gray);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--light);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--gray);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Features */
+        .features {
+            padding: 4rem 0;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: var(--light);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-icon i {
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Demo Section */
+        .demo {
+            padding: 4rem 0;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 20px;
+            margin: 2rem 0;
+        }
+
+        .demo h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: var(--light);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .demo-video {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-video i {
+            font-size: 4rem;
+            color: var(--primary);
+        }
+
+        .demo-features ul {
+            list-style: none;
+        }
+
+        .demo-features li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--gray);
+        }
+
+        .demo-features li i {
+            color: var(--success);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: var(--gray);
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            padding: 2rem 0;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--light);
+        }
+
+        .chart-container {
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Data Source Connector */
+        .connector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .connector-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .connector-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .connector-card.active {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .connector-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--light);
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+
+            nav ul {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-chart-network"></i>
+                    <span>OmniAnalytics</span>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="active" onclick="showTab('dashboard')">Dashboard</a></li>
+                        <li><a href="#" onclick="showTab('connect')">Connect</a></li>
+                        <li><a href="#" onclick="showTab('analyze')">Analyze</a></li>
+                        <li><a href="#" onclick="showTab('ai')">AI Insights</a></li>
+                    </ul>
+                </nav>
+                <button class="btn btn-primary" onclick="showTab('connect')">
+                    <i class="fas fa-plus"></i> Connect Source
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard">
+                <div class="dashboard-header">
+                    <h1>Analytics Dashboard</h1>
+                    <div>
+                        <button class="btn btn-secondary" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-primary" onclick="createNewDashboard()">
+                            <i class="fas fa-plus"></i> New Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Chart 1 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Revenue Trend</h3>
+                            <select class="form-control" style="width: auto;">
+                                <option>Last 7 days</option>
+                                <option>Last 30 days</option>
+                                <option>Last quarter</option>
+                            </select>
+                        </div>
+                        <div class="chart-container" id="chart1"></div>
+                    </div>
+
+                    <!-- Chart 2 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">User Engagement</h3>
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.75rem;">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
+                        <div class="chart-container" id="chart2"></div>
+                    </div>
+
+                    <!-- Chart 3 -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Data Sources</h3>
+                            <span class="badge"
+                                style="background: var(--success); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem;">
+                                <i class="fas fa-check"></i> 3 Connected
+                            </span>
+                        </div>
+                        <div class="chart-container" id="chart3"></div>
+                    </div>
+
+                    <!-- Metrics Card -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Key Metrics</h3>
+                            <i class="fas fa-ellipsis-h" style="color: var(--gray); cursor: pointer;"></i>
+                        </div>
+                        <div id="metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connect Tab -->
+        <div id="connect" class="tab-content">
+            <div class="dashboard">
+                <h1>Connect Data Sources</h1>
+                <p class="subtitle" style="color: var(--gray); margin-bottom: 2rem;">
+                    Connect directly to 50+ data sources. No data warehouse required.
+                </p>
+
+                <div class="connector-grid">
+                    <div class="connector-card active" onclick="selectConnector('postgresql')">
+                        <div class="connector-icon">
+                            <i class="fas fa-database" style="color: #3b82f6;"></i>
+                        </div>
+                        <h3>PostgreSQL</h3>
+                        <p style="color: var(--gray); font-size: 0.875rem;">Relational database</p>
+                    </div>
+
+                    <div class="connector-card" onclick="selectConnector('mysql')">
+                        <div class="connector-icon">
+                            <i class="fas fa-database" style="color: #10b981;"></i>
+                        </div>
+                        <h3>MySQL</h3>
+                        <p style="color: var(--gray); font-size: 0.875rem;">Relational database</p>
+                    </div>
+
+                    <div class="connector-card" onclick="selectConnector('mongodb')">
+                        <div class="connector-icon">
+                            <i class="fas fa-leaf" style="color: #f59e0b;"></i>
+                        </div>
+                        <h3>MongoDB</h3>
+                        <p style="color: var(--gray); font-size: 0.875rem;">NoSQL database</p>
+                    </div>
+
+                    <div class="connector-card" onclick="selectConnector('salesforce')">
+                        <div class="connector-icon">
+                            <i class="fas fa-cloud" style="color: #00a1e0;"></i>
+                        </div>
+                        <h3>Salesforce</h3>
+                        <p style="color: var(--gray); font-size: 0.875rem;">CRM platform</p>
+                    </div>
+
+                    <div class="connector-card" onclick="selectConnector('csv')">
+                        <div class="connector-icon">
+                            <i class="fas fa-file-csv" style="color: #8b5cf6;"></i>
+                        </div>
+                        <h3>CSV File</h3>
+                        <p style="color: var(--gray); font-size: 0.875rem;">Upload CSV files</p>
+                    </div>
+
+                    <div class="connector-card" onclick="selectConnector('api')">
+                        <div class="connector-icon">
+                            <i class="fas fa-globe" style="color: #ef4444;"></i>
+                        </div>
+                        <h3>REST API</h3>
+                        <p style="color: var(--gray); font-size: 0.875rem;">Custom API endpoints</p>
+                    </div>
+                </div>
+
+                <div id="connector-form">
+                    <h2 style="margin-bottom: 1.5rem;">PostgreSQL Configuration</h2>
+
+                    <div class="form-group">
+                        <label for="host">Host</label>
+                        <input type="text" id="host" class="form-control" placeholder="localhost">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="port">Port</label>
+                        <input type="number" id="port" class="form-control" placeholder="5432" value="5432">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="database">Database</label>
+                        <input type="text" id="database" class="form-control" placeholder="mydatabase">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" class="form-control" placeholder="postgres">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="••••••••">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="ssl" style="margin-right: 0.5rem;">
+                            Use SSL
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button class="btn btn-secondary" onclick="testConnection()">
+                            <i class="fas fa-vial"></i> Test Connection
+                        </button>
+                        <button class="btn btn-primary" onclick="saveConnection()">
+                            <i class="fas fa-save"></i> Save Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyze Tab -->
+        <div id="analyze" class="tab-content">
+            <div class="dashboard">
+                <h1>Analyze Data</h1>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="showAnalyzeTab('query')">Query Builder</button>
+                    <button class="tab" onclick="showAnalyzeTab('visualize')">Visualization</button>
+                    <button class="tab" onclick="showAnalyzeTab('explore')">Data Explorer</button>
+                </div>
+
+                <div id="query-tab" class="analyze-tab active">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div>
+                            <h3 style="margin-bottom: 1rem;">Data Sources</h3>
+                            <div id="data-sources-list"
+                                style="background: rgba(30, 41, 59, 0.5); border-radius: 10px; padding: 1rem;">
+                                <!-- Data sources will be loaded here -->
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 style="margin-bottom: 1rem;">Query Editor</h3>
+                            <div class="form-group">
+                                <label for="query">SQL Query</label>
+                                <textarea id="query" class="form-control" rows="10"
+                                    placeholder="SELECT * FROM table_name LIMIT 100"></textarea>
+                            </div>
+
+                            <button class="btn btn-primary" onclick="executeQuery()">
+                                <i class="fas fa-play"></i> Execute Query
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="query-results" style="margin-top: 2rem;">
+                        <!-- Query results will appear here -->
+                    </div>
+                </div>
+
+                <div id="visualize-tab" class="analyze-tab">
+                    <h3>Coming Soon: Visualization Builder</h3>
+                    <p style="color: var(--gray);">Drag-and-drop visualization builder with AI recommendations.</p>
+                </div>
+
+                <div id="explore-tab" class="analyze-tab">
+                    <h3>Coming Soon: Data Explorer</h3>
+                    <p style="color: var(--gray);">Explore and discover patterns in your data.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insights Tab -->
+        <div id="ai" class="tab-content">
+            <div class="dashboard">
+                <h1>AI Insights</h1>
+                <p class="subtitle" style="color: var(--gray); margin-bottom: 2rem;">
+                    Get automated insights and recommendations from your data.
+                </p>
+
+                <div class="form-group">
+                    <label for="ai-query">What would you like to know about your data?</label>
+                    <textarea id="ai-query" class="form-control" rows="3"
+                        placeholder="Example: What are the trends in sales data? Are there any anomalies I should be aware of?"></textarea>
+                </div>
+
+                <button class="btn btn-primary" onclick="getAIInsights()">
+                    <i class="fas fa-brain"></i> Generate Insights
+                </button>
+
+                <div id="ai-results" style="margin-top: 2rem;">
+                    <!-- AI insights will appear here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 OmniAnalytics. All rights reserved.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+                <i class="fas fa-bolt" style="color: var(--primary); margin-right: 0.5rem;"></i>
+                No data warehouse required. Connect directly to your data sources.
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <script>
+        // Global variables
+        let currentConnector = 'postgresql';
+        let API_URL = 'http://localhost:8000';
+
+        // Tab management
+        function showTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all nav links
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+
+            // Set active nav link
+            document.querySelector(`nav a[onclick*="${tabId}"]`).classList.add('active');
+
+            // Load data for the tab
+            if (tabId === 'dashboard') {
+                loadDashboard();
+            } else if (tabId === 'connect') {
+                loadConnectors();
+            }
+        }
+
+        function showAnalyzeTab(tabId) {
+            // Hide all analyze tabs
+            document.querySelectorAll('.analyze-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all analyze tab buttons
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+
+            // Set active button
+            event.target.classList.add('active');
+        }
+
+        function selectConnector(connector) {
+            currentConnector = connector;
+
+            // Update active card
+            document.querySelectorAll('.connector-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.target.closest('.connector-card').classList.add('active');
+
+            // Update form title
+            const titles = {
+                'postgresql': 'PostgreSQL Configuration',
+                'mysql': 'MySQL Configuration',
+                'mongodb': 'MongoDB Configuration',
+                'salesforce': 'Salesforce Configuration',
+                'csv': 'CSV File Upload',
+                'api': 'REST API Configuration'
+            };
+
+            document.querySelector('#connector-form h2').textContent = titles[connector] || 'Configuration';
+        }
+
+        // Dashboard functions
+        function loadDashboard() {
+            // Create sample charts
+            createSampleCharts();
+            loadMetrics();
+        }
+
+        function createSampleCharts() {
+            // Chart 1: Line chart
+            const trace1 = {
+                x: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                y: [1000, 1500, 1800, 2200, 2500, 3000],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Revenue',
+                line: { color: '#3b82f6', width: 3 }
+            };
+
+            const layout1 = {
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#94a3b8' },
+                xaxis: { gridcolor: 'rgba(255,255,255,0.1)' },
+                yaxis: { gridcolor: 'rgba(255,255,255,0.1)' },
+                margin: { t: 30, r: 30, b: 30, l: 40 },
+                showlegend: false
+            };
+
+            Plotly.newPlot('chart1', [trace1], layout1);
+
+            // Chart 2: Bar chart
+            const trace2 = {
+                x: ['Mobile', 'Desktop', 'Tablet', 'Other'],
+                y: [45, 35, 15, 5],
+                type: 'bar',
+                marker: {
+                    color: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
+                    line: { width: 0 }
+                }
+            };
+
+            Plotly.newPlot('chart2', [trace2], layout1);
+
+            // Chart 3: Pie chart
+            const trace3 = {
+                labels: ['PostgreSQL', 'Salesforce', 'CSV Files'],
+                values: [50, 30, 20],
+                type: 'pie',
+                hole: 0.4,
+                marker: { colors: ['#3b82f6', '#00a1e0', '#8b5cf6'] }
+            };
+
+            const layout3 = {
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#94a3b8' },
+                showlegend: true,
+                legend: { x: 1, y: 0.5 }
+            };
+
+            Plotly.newPlot('chart3', [trace3], layout3);
+        }
+
+        function loadMetrics() {
+            const metrics = [
+                { label: 'Total Queries', value: '1,234', change: '+12%', icon: 'fa-database', color: '#3b82f6' },
+                { label: 'Active Sources', value: '3', change: '+1', icon: 'fa-link', color: '#10b981' },
+                { label: 'Dashboards', value: '7', change: '+2', icon: 'fa-chart-bar', color: '#8b5cf6' },
+                { label: 'Response Time', value: '245ms', change: '-15%', icon: 'fa-bolt', color: '#f59e0b' }
+            ];
+
+            const metricsHtml = metrics.map(metric => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 40px; height: 40px; background: ${metric.color}20; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas ${metric.icon}" style="color: ${metric.color};"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.875rem; color: var(--gray);">${metric.label}</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">${metric.value}</div>
+                        </div>
+                    </div>
+                    <div style="color: ${metric.change.startsWith('+') ? '#10b981' : '#ef4444'}; font-weight: 600;">
+                        ${metric.change}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('metrics').innerHTML = metricsHtml;
+        }
+
+        // Connection functions
+        async function testConnection() {
+            const connectionData = getConnectionData();
+
+            // Show loading state
+            const testBtn = event.target;
+            const originalText = testBtn.innerHTML;
+            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            testBtn.disabled = true;
+
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // In a real app, you would call your API here:
+                // const response = await fetch(`${API_URL}/api/data-sources/test-connection`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(connectionData)
+                // });
+
+                // Show success message
+                showNotification('Connection successful!', 'success');
+
+            } catch (error) {
+                showNotification('Connection failed. Please check your details.', 'error');
+            } finally {
+                // Restore button
+                testBtn.innerHTML = originalText;
+                testBtn.disabled = false;
+            }
+        }
+
+        async function saveConnection() {
+            const connectionData = getConnectionData();
+
+            // Show loading state
+            const saveBtn = event.target;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // In a real app, you would call your API here:
+                // const response = await fetch(`${API_URL}/api/data-sources`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(connectionData)
+                // });
+
+                showNotification('Connection saved successfully!', 'success');
+                showTab('dashboard');
+
+            } catch (error) {
+                showNotification('Failed to save connection.', 'error');
+            } finally {
+                // Restore button
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        function getConnectionData() {
+            return {
+                name: 'My ' + currentConnector.charAt(0).toUpperCase() + currentConnector.slice(1) + ' Connection',
+                type: currentConnector,
+                connection_config: {
+                    host: document.getElementById('host')?.value || 'localhost',
+                    port: document.getElementById('port')?.value || 5432,
+                    database: document.getElementById('database')?.value || '',
+                    username: document.getElementById('username')?.value || '',
+                    password: document.getElementById('password')?.value || '',
+                    ssl: document.getElementById('ssl')?.checked || false
+                }
+            };
+        }
+
+        // Query functions
+        async function executeQuery() {
+            const query = document.getElementById('query').value;
+
+            if (!query.trim()) {
+                showNotification('Please enter a query', 'warning');
+                return;
+            }
+
+            // Show loading state
+            const executeBtn = event.target;
+            const originalText = executeBtn.innerHTML;
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executing...';
+            executeBtn.disabled = true;
+
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Generate sample data
+                const sampleData = generateSampleData();
+                displayQueryResults(sampleData);
+
+            } catch (error) {
+                showNotification('Query execution failed: ' + error.message, 'error');
+            } finally {
+                // Restore button
+                executeBtn.innerHTML = originalText;
+                executeBtn.disabled = false;
+            }
+        }
+
+        function generateSampleData() {
+            const columns = ['id', 'name', 'email', 'department', 'salary', 'join_date'];
+            const data = [];
+
+            for (let i = 1; i <= 50; i++) {
+                data.push({
+                    id: i,
+                    name: `Employee ${i}`,
+                    email: `employee${i}@company.com`,
+                    department: ['Engineering', 'Sales', 'Marketing', 'HR'][Math.floor(Math.random() * 4)],
+                    salary: Math.floor(Math.random() * 50000) + 50000,
+                    join_date: new Date(2020 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 12), 1)
+                        .toISOString().split('T')[0]
+                });
+            }
+
+            return { columns, data };
+        }
+
+        function displayQueryResults(resultData) {
+            const { columns, data } = resultData;
+
+            // Create table HTML
+            let html = `
+                <div style="background: rgba(30, 41, 59, 0.5); border-radius: 10px; overflow: hidden;">
+                    <div style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">Query Results</h3>
+                        <span style="color: var(--gray);">${data.length} rows</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(15, 23, 42, 0.5);">
+            `;
+
+            // Add headers
+            columns.forEach(col => {
+                html += `<th style="padding: 0.75rem 1rem; text-align: left; color: var(--gray); border-bottom: 1px solid rgba(255,255,255,0.1);">${col}</th>`;
+            });
+
+            html += `</tr></thead><tbody>`;
+
+            // Add data rows (limit to 10 for display)
+            data.slice(0, 10).forEach(row => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    html += `<td style="padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">${row[col]}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += `</tbody></table></div>`;
+
+            if (data.length > 10) {
+                html += `<div style="padding: 1rem; color: var(--gray); text-align: center;">
+                    Showing 10 of ${data.length} rows
+                </div>`;
+            }
+
+            html += `</div>`;
+
+            document.getElementById('query-results').innerHTML = html;
+        }
+
+        // AI Insights functions
+        async function getAIInsights() {
+            const query = document.getElementById('ai-query').value;
+
+            if (!query.trim()) {
+                showNotification('Please enter a question about your data', 'warning');
+                return;
+            }
+
+            // Show loading state
+            const insightBtn = event.target;
+            const originalText = insightBtn.innerHTML;
+            insightBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            insightBtn.disabled = true;
+
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Generate sample insights
+                const insights = generateAIInsights();
+                displayAIInsights(insights);
+
+            } catch (error) {
+                showNotification('Failed to generate insights: ' + error.message, 'error');
+            } finally {
+                // Restore button
+                insightBtn.innerHTML = originalText;
+                insightBtn.disabled = false;
+            }
+        }
+
+        function generateAIInsights() {
+            return {
+                insights: [
+                    "Sales have increased by 15% month-over-month, with the highest growth in the EMEA region.",
+                    "Customer acquisition cost has decreased by 8% due to improved marketing efficiency.",
+                    "User engagement shows a 22% increase on mobile devices compared to desktop.",
+                    "There's a correlation between customer support response time and customer satisfaction scores."
+                ],
+                recommendations: [
+                    "Consider expanding marketing efforts in the EMEA region where growth is strongest.",
+                    "Optimize the mobile experience to capitalize on increasing mobile engagement.",
+                    "Implement proactive customer support to further improve satisfaction scores."
+                ],
+                suggestedVisualizations: [
+                    "Regional sales performance heatmap",
+                    "Customer acquisition cost trend line chart",
+                    "Device engagement comparison bar chart"
+                ]
+            };
+        }
+
+        function displayAIInsights(insights) {
+            let html = `
+                <div style="background: rgba(30, 41, 59, 0.5); border-radius: 15px; padding: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-brain" style="color: white; font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">AI Insights</h3>
+                            <p style="color: var(--gray); margin: 0.25rem 0 0 0;">Powered by advanced analytics</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--light); margin-bottom: 1rem;">Key Insights</h4>
+                        <ul style="list-style: none; padding: 0;">
+            `;
+
+            insights.insights.forEach(insight => {
+                html += `
+                    <li style="padding: 0.75rem; background: rgba(15, 23, 42, 0.3); border-radius: 8px; margin-bottom: 0.5rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <i class="fas fa-lightbulb" style="color: #f59e0b; margin-top: 0.25rem;"></i>
+                        <span>${insight}</span>
+                    </li>
+                `;
+            });
+
+            html += `</ul></div>`;
+
+            // Add recommendations
+            html += `
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: var(--light); margin-bottom: 1rem;">Recommendations</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+            `;
+
+            insights.recommendations.forEach((rec, index) => {
+                html += `
+                    <div style="background: rgba(15, 23, 42, 0.3); padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+                        <div style="font-weight: 600; color: var(--light); margin-bottom: 0.5rem;">Action ${index + 1}</div>
+                        <div style="color: var(--gray);">${rec}</div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+
+            // Add visualizations
+            html += `
+                <div>
+                    <h4 style="color: var(--light); margin-bottom: 1rem;">Suggested Visualizations</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            `;
+
+            insights.suggestedVisualizations.forEach(viz => {
+                html += `
+                    <span style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem;">
+                        ${viz}
+                    </span>
+                `;
+            });
+
+            html += `</div></div></div>`;
+
+            document.getElementById('ai-results').innerHTML = html;
+        }
+
+        // Utility functions
+        function showNotification(message, type = 'info') {
+            // Remove any existing notification
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div style="position: fixed; top: 20px; right: 20px; background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b'}; color: white; padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; z-index: 9999; animation: slideIn 0.3s ease;">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+
+            // Add animation styles
+            if (!document.querySelector('#notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        function refreshData() {
+            showNotification('Refreshing dashboard data...', 'info');
+            loadDashboard();
+        }
+
+        function createNewDashboard() {
+            showNotification('Creating new dashboard...', 'info');
+        }
+
+        function loadConnectors() {
+            // Simulate loading data sources
+            setTimeout(() => {
+                // This would be populated from API in real app
+                const dataSources = [
+                    { name: 'Production DB', type: 'postgresql', status: 'connected' },
+                    { name: 'Sales Data', type: 'salesforce', status: 'connected' },
+                    { name: 'User Analytics', type: 'csv', status: 'connected' }
+                ];
+
+                let html = '<h3 style="margin-bottom: 1rem;">Connected Sources</h3>';
+
+                if (dataSources.length === 0) {
+                    html += `<div style="text-align: center; padding: 2rem; color: var(--gray);">
+                        <i class="fas fa-database" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <p>No data sources connected yet.</p>
+                    </div>`;
+                } else {
+                    html += `<div style="display: flex; flex-direction: column; gap: 0.5rem;">`;
+
+                    dataSources.forEach(source => {
+                        html += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(15, 23, 42, 0.3); border-radius: 10px;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div style="width: 40px; height: 40px; background: ${getConnectorColor(source.type)}20; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="${getConnectorIcon(source.type)}" style="color: ${getConnectorColor(source.type)};"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;">${source.name}</div>
+                                        <div style="color: var(--gray); font-size: 0.875rem;">${source.type}</div>
+                                    </div>
+                                </div>
+                                <span style="background: #10b98120; color: #10b981; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-check-circle"></i> Connected
+                                </span>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div>`;
+                }
+
+                document.getElementById('data-sources-list').innerHTML = html;
+            }, 500);
+        }
+
+        function getConnectorIcon(type) {
+            const icons = {
+                'postgresql': 'fas fa-database',
+                'mysql': 'fas fa-database',
+                'mongodb': 'fas fa-leaf',
+                'salesforce': 'fas fa-cloud',
+                'csv': 'fas fa-file-csv',
+                'api': 'fas fa-globe'
+            };
+            return icons[type] || 'fas fa-database';
+        }
+
+        function getConnectorColor(type) {
+            const colors = {
+                'postgresql': '#3b82f6',
+                'mysql': '#10b981',
+                'mongodb': '#f59e0b',
+                'salesforce': '#00a1e0',
+                'csv': '#8b5cf6',
+                'api': '#ef4444'
+            };
+            return colors[type] || '#3b82f6';
+        }
+
+        // Initialize dashboard on load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadDashboard();
+            loadConnectors();
+        });
+    </script>
+</body>
+
+</html>
