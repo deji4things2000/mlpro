@@ -12,6 +12,7 @@ A universal analytics platform built with Python, FastAPI, PostgreSQL, Redis, an
 
 ## Quick Start
 
+
 ```bash
 # 1. Clone the repo and enter the directory
 cd omnianalytics-python
@@ -23,15 +24,23 @@ chmod +x setup.sh
 # 3. Activate the virtual environment
 source .venv/bin/activate
 
-# 4. Start the platform
-python run.py
+# 4. Install dependencies (if needed)
+pip install -r requirements.txt
+
+# 5. Start the backend (from the project root):
+PYTHONPATH=. uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
+
+# 6. Start the frontend (in a new terminal):
+cd frontend
+python3 -m http.server 8080
 ```
 
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-- Frontend: file://$(pwd)/frontend/index.html
+- Frontend: http://localhost:8080
 
 ## Manual Setup
+
 
 1. Install dependencies:
    ```bash
@@ -41,17 +50,23 @@ python run.py
    ```bash
    docker-compose up -d
    ```
-3. Run the backend:
+3. Run the backend (from the project root):
    ```bash
-   cd backend/api
-   uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+   PYTHONPATH=. uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
    ```
-4. Open the frontend in your browser:
+4. Serve the frontend (in a new terminal):
    ```bash
-   open frontend/index.html  # macOS
-   xdg-open frontend/index.html  # Linux
-   # or double-click the file
+   cd frontend
+   python3 -m http.server 8080
    ```
+5. Open the frontend in your browser:
+   - http://localhost:8080
+## Troubleshooting
+
+- If you see `ModuleNotFoundError: No module named 'backend'`, make sure you are running uvicorn from the omnianalytics-python directory and set `PYTHONPATH=.`
+- If a port is already in use, kill the process using it (e.g., `lsof -i :8000` and `kill <PID>`).
+- If you see missing dependencies, activate the virtual environment and run `pip install -r requirements.txt`.
+
 
 ## Directory Structure
 

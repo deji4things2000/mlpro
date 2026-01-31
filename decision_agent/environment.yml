@@ -1,0 +1,17 @@
+name: transformer-agent
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip=24.2
+  - gymnasium=0.29.1
+  - numpy=1.26.4
+  - pytorch=2.4.1
+  - torchvision=0.19.1
+  - matplotlib=3.9.2
+  - tqdm=4.66.5
+  - opencv=4.10.0
+  - pip:
+    - stable-baselines3==2.3.2
