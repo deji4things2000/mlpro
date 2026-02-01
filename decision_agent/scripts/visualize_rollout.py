@@ -1,16 +1,17 @@
-# scripts/visualize_rollout.py - COMPLETE VERSION
+# scripts/visualize_rollout.py - CLEAN NO-GRIDLINES VERSION
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')  # For Mac display
 import torch
 from env.nav_env import NavEnv
 from env.expert_policy import expert_policy
 from utils.preprocessing import build_image_encoder, image_transform
 from models.transformer_policy import TransformerPolicy
-from torch.utils.data import DataLoader
 
 def make_transformer_policy(model_path, device="cpu", seq_len=8):
     encoder = build_image_encoder(device=device)
@@ -73,17 +74,61 @@ def make_transformer_policy(model_path, device="cpu", seq_len=8):
 
     return policy
 
-# 2x2 COMPARISON PLOT
 if __name__ == "__main__":
-    print("🎬 Creating policy comparison...")
-    env = NavEnv(render_mode="rgb_array")
+    print("🎬 Generating CLEAN expert trajectories (no gridlines)...")
     
+    # 1. EXPERT TRAJECTORIES (2x2, no grid)
+    env = NavEnv(render_mode="rgb_array")  # ← FIXED: Define env here!
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    
+    for ep in range(4):
+        obs, _ = env.reset()
+        states = []
+        
+        ax = axes[ep//2, ep%2]
+        ax.set_xlim(-10, 10)
+        ax.set_ylim(-10, 10)
+        ax.set_title(f"Expert - Episode {ep+1}", fontweight='bold', fontsize=14)
+        
+        done = False
+        step = 0
+        while not done and step < 200:
+            action = expert_policy(obs, env)
+            states.append(env.state.copy())
+            obs, r, term, trunc, _ = env.step(action)
+            done = term or trunc
+            step += 1
+        
+        states = np.array(states)
+        ax.plot(states[:, 0], states[:, 1], 'darkblue', linewidth=5)
+        ax.plot(states[0, 0], states[0, 1], 'limegreen', markersize=15, marker='o')
+        ax.plot(states[-1, 0], states[-1, 1], 'red', markersize=15, marker='o')
+        ax.plot(env.goal[0], env.goal[1], 'limegreen', markersize=20, marker='*')
+        
+        for rect in env.obstacles:
+            x1,y1,x2,y2 = rect
+            ax.fill([x1,x1,x2,x2], [y1,y2,y2,y1], 'darkred', alpha=0.7)
+        
+        ax.grid(False)  # NO GRIDLINES
+        ax.axis('equal')
+    
+    plt.suptitle("Expert Policy Performance (68% Success Rate)", fontsize=16, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig("report/expert_clean.png", dpi=300, bbox_inches='tight', facecolor='white')
+    plt.show()
+    
+    print("✅ Saved: report/expert_clean.png")
+    
+    print("🎬 Generating CLEAN policy comparison (no gridlines)...")
+    
+    # 2. POLICY COMPARISON (2x2, no grid)
+    env = NavEnv(render_mode="rgb_array")
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     policies = [
-        (lambda obs, e: e.action_space.sample(), "Random (Baseline)"),
-        (expert_policy, "Expert Policy"), 
-        (make_transformer_policy("models/transformer_policy.pt", device="cpu"), "Transformer (98% Acc)"),
-        (make_transformer_policy("models/transformer_policy.pt", device="cpu"), "Transformer #2")
+        (lambda obs, e: e.action_space.sample(), "Random\n(2% Success)"),
+        (expert_policy, "Expert\n(68% Success)"), 
+        (make_transformer_policy("models/transformer_policy.pt", device="cpu"), "Transformer #1\n(2% Success)"),
+        (make_transformer_policy("models/transformer_policy.pt", device="cpu"), "Transformer #2\n(2% Success)")
     ]
     
     for idx, (policy_fn, name) in enumerate(policies):
@@ -101,28 +146,26 @@ if __name__ == "__main__":
             step += 1
         
         states = np.array(states)
-        color = ['red', 'green', 'blue', 'purple'][idx]
-        
-        ax.plot(states[:, 0], states[:, 1], color=color, linewidth=4, label=name)
-        ax.plot(states[0, 0], states[0, 1], 'go', markersize=15, label='Start')
-        ax.plot(states[-1, 0], states[-1, 1], 'ro', markersize=15, label='End')
-        ax.plot(env.goal[0], env.goal[1], 'g*', markersize=20, label='Goal')
+        colors = ['darkred', 'darkgreen', 'darkblue', 'purple']
+        ax.plot(states[:, 0], states[:, 1], color=colors[idx], linewidth=6)
+        ax.plot(states[0, 0], states[0, 1], 'limegreen', markersize=18, marker='o')
+        ax.plot(states[-1, 0], states[-1, 1], 'red', markersize=18, marker='o')
+        ax.plot(env.goal[0], env.goal[1], 'limegreen', markersize=25, marker='*')
         
         for rect in env.obstacles:
             x1,y1,x2,y2 = rect
-            ax.fill([x1,x1,x2,x2], [y1,y2,y2,y1], 'r', alpha=0.6)
+            ax.fill([x1,x1,x2,x2], [y1,y2,y2,y1], 'darkred', alpha=0.7)
         
-        ax.set_title(name, fontsize=14, fontweight='bold', pad=20)
-        ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=10)
+        ax.set_title(name, fontweight='bold', fontsize=13, pad=15)
+        ax.grid(False)  # NO GRIDLINES
         ax.axis('equal')
         ax.set_xlim(-8, 8)
         ax.set_ylim(-8, 8)
     
-    plt.suptitle("Transformer Agent vs Expert vs Random (98.4% Imitation Accuracy)", 
-                 fontsize=16, fontweight='bold')
+    plt.suptitle("Policy Comparison: 98.4% Imitation → 2% Task Success", fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig("report/policy_comparison.png", dpi=300, bbox_inches='tight')
+    plt.savefig("report/policy_comparison_clean.png", dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
     
-    print("✅ Saved: report/policy_comparison.png")
+    print("✅ Saved: report/policy_comparison_clean.png")
+    print("🎉 Publication-ready figures generated!")

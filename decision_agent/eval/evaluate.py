@@ -105,6 +105,76 @@ def make_transformer_policy(model_path, device="cuda", seq_len=8):
 
     return policy
 
+# ADD THESE TWO FUNCTIONS at the END (before if __name__ == "__main__":)
+
+def transformer_policy(obs, env):
+    """Standalone transformer inference (for demo)"""
+    # Copy the exact inference logic from make_transformer_policy
+    encoder = build_image_encoder(device='cpu')
+    tmp_env = NavEnv()
+    lidar_dim = tmp_env.observation_space["lidar"].shape[0]
+    input_dim = 128 + lidar_dim + 5 + 4
+    policy_net = TransformerPolicy(input_dim=input_dim, num_actions=4, seq_len=8).to('cpu')
+    state_dict = torch.load("models/transformer_policy.pt", map_location='cpu')["policy"]
+    policy_net.load_state_dict(state_dict)
+    policy_net.eval()
+    
+    history = []
+    # [Same exact inference code as make_transformer_policy - truncated for brevity]
+    # Use the transformer_policy from your make_transformer_policy function
+    return make_transformer_policy("models/transformer_policy.pt", device="cpu")(obs, env)
+
+def demo_transformer_video(env, save_path="report/transformer_demo.gif"):
+    """🎬 Generate Transformer agent GIF demo"""
+    print("🎬 Recording Transformer demo...")
+    obs, _ = env.reset()
+    frames = []
+    
+    done = False
+    step = 0
+    while not done and step < 200:
+        frame = env.render()
+        frames.append(frame)
+        
+        action = transformer_policy(obs, env)
+        obs, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
+        step += 1
+    
+    # Create & save GIF
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    fig = plt.figure(figsize=(8, 8))
+    
+    def animate(i):
+        plt.clf()
+        plt.imshow(frames[i])
+        plt.title(f'Transformer Agent - Step {i+1}/{len(frames)}')
+        plt.axis('off')
+    
+    anim = animation.FuncAnimation(fig, animate, frames=len(frames), interval=100)
+    anim.save(save_path, writer=animation.PillowWriter(fps=10))
+    plt.close()
+    print(f"✅ Video saved: {save_path}")
+    return save_path
+
+# REPLACE your if __name__ == "__main__": with this:
+if __name__ == "__main__":
+    env = NavEnv()
+    
+    # Your ORIGINAL evaluation (KEEP THIS)
+    random_stats = run_policy(env, make_random_policy(), episodes=50)
+    expert_stats = run_policy(env, make_expert_policy(), episodes=50)
+    transformer_stats = run_policy(env, make_transformer_policy("models/transformer_policy.pt", device="cpu"), episodes=50)
+    
+    print("Random:", random_stats)
+    print("Expert:", expert_stats)
+    print("Transformer:", transformer_stats)
+    
+    # 🎥 NEW: Video demo
+    demo_transformer_video(env)
+
+
 if __name__ == "__main__":
     env = NavEnv()
     random_stats = run_policy(env, make_random_policy(), episodes=50)
@@ -113,3 +183,4 @@ if __name__ == "__main__":
     print("Random:", random_stats)
     print("Expert:", expert_stats)
     print("Transformer:", transformer_stats)
+
