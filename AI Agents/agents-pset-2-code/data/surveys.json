@@ -1,0 +1,73 @@
+{
+  "inventory_name": "Big-Five Factor Markers (10-item per factor)",
+  "inventory_source_note": "Items follow the Factor Marker wording supplied in the assignment context",
+  "trait_direction_note": "Factor IV is Emotional Stability in the original markers; here it is mapped to N (Neuroticism), so +keyed stability items are reverse-keyed on N",
+  "traits": ["O", "C", "E", "A", "N"],
+  "trait_sampling": {
+    "method": "explicit_per_trait_distribution",
+    "note": "All sampling support points and probabilities are explicitly specified below",
+    "distributions": {
+      "O": {"values": [-2.0, -1.0, 0.0, 1.0, 2.0], "probs": [0.2, 0.2, 0.2, 0.2, 0.2]},
+      "C": {"values": [-2.0, -1.0, 0.0, 1.0, 2.0], "probs": [0.2, 0.2, 0.2, 0.2, 0.2]},
+      "E": {"values": [-2.0, -1.0, 0.0, 1.0, 2.0], "probs": [0.2, 0.2, 0.2, 0.2, 0.2]},
+      "A": {"values": [-2.0, -1.0, 0.0, 1.0, 2.0], "probs": [0.2, 0.2, 0.2, 0.2, 0.2]},
+      "N": {"values": [-2.0, -1.0, 0.0, 1.0, 2.0], "probs": [0.2, 0.2, 0.2, 0.2, 0.2]}
+    }
+  },
+  "items": [
+    {"id": "E01", "factor": "E", "keyed": "+", "text": "Am the life of the party.", "bias": 0.0, "weights": {"E": 1.0}},
+    {"id": "E02", "factor": "E", "keyed": "+", "text": "Feel comfortable around people.", "bias": 0.0, "weights": {"E": 1.0}},
+    {"id": "E03", "factor": "E", "keyed": "+", "text": "Start conversations.", "bias": 0.0, "weights": {"E": 1.0}},
+    {"id": "E04", "factor": "E", "keyed": "+", "text": "Talk to a lot of different people at parties.", "bias": 0.0, "weights": {"E": 1.0}},
+    {"id": "E05", "factor": "E", "keyed": "+", "text": "Don't mind being the center of attention.", "bias": 0.0, "weights": {"E": 1.0}},
+    {"id": "E06", "factor": "E", "keyed": "-", "text": "Don't talk a lot.", "bias": 0.0, "weights": {"E": -1.0}},
+    {"id": "E07", "factor": "E", "keyed": "-", "text": "Keep in the background.", "bias": 0.0, "weights": {"E": -1.0}},
+    {"id": "E08", "factor": "E", "keyed": "-", "text": "Have little to say.", "bias": 0.0, "weights": {"E": -1.0}},
+    {"id": "E09", "factor": "E", "keyed": "-", "text": "Don't like to draw attention to myself.", "bias": 0.0, "weights": {"E": -1.0}},
+    {"id": "E10", "factor": "E", "keyed": "-", "text": "Am quiet around strangers.", "bias": 0.0, "weights": {"E": -1.0}},
+
+    {"id": "A01", "factor": "A", "keyed": "+", "text": "Am interested in people.", "bias": 0.0, "weights": {"A": 1.0}},
+    {"id": "A02", "factor": "A", "keyed": "+", "text": "Sympathize with others' feelings.", "bias": 0.0, "weights": {"A": 1.0}},
+    {"id": "A03", "factor": "A", "keyed": "+", "text": "Have a soft heart.", "bias": 0.0, "weights": {"A": 1.0}},
+    {"id": "A04", "factor": "A", "keyed": "+", "text": "Take time out for others.", "bias": 0.0, "weights": {"A": 1.0}},
+    {"id": "A05", "factor": "A", "keyed": "+", "text": "Feel others' emotions.", "bias": 0.0, "weights": {"A": 1.0}},
+    {"id": "A06", "factor": "A", "keyed": "+", "text": "Make people feel at ease.", "bias": 0.0, "weights": {"A": 1.0}},
+    {"id": "A07", "factor": "A", "keyed": "-", "text": "Am not really interested in others.", "bias": 0.0, "weights": {"A": -1.0}},
+    {"id": "A08", "factor": "A", "keyed": "-", "text": "Insult people.", "bias": 0.0, "weights": {"A": -1.0}},
+    {"id": "A09", "factor": "A", "keyed": "-", "text": "Am not interested in other people's problems.", "bias": 0.0, "weights": {"A": -1.0}},
+    {"id": "A10", "factor": "A", "keyed": "-", "text": "Feel little concern for others.", "bias": 0.0, "weights": {"A": -1.0}},
+
+    {"id": "C01", "factor": "C", "keyed": "+", "text": "Am always prepared.", "bias": 0.0, "weights": {"C": 1.0}},
+    {"id": "C02", "factor": "C", "keyed": "+", "text": "Pay attention to details.", "bias": 0.0, "weights": {"C": 1.0}},
+    {"id": "C03", "factor": "C", "keyed": "+", "text": "Get chores done right away.", "bias": 0.0, "weights": {"C": 1.0}},
+    {"id": "C04", "factor": "C", "keyed": "+", "text": "Like order.", "bias": 0.0, "weights": {"C": 1.0}},
+    {"id": "C05", "factor": "C", "keyed": "+", "text": "Follow a schedule.", "bias": 0.0, "weights": {"C": 1.0}},
+    {"id": "C06", "factor": "C", "keyed": "+", "text": "Am exacting in my work.", "bias": 0.0, "weights": {"C": 1.0}},
+    {"id": "C07", "factor": "C", "keyed": "-", "text": "Leave my belongings around.", "bias": 0.0, "weights": {"C": -1.0}},
+    {"id": "C08", "factor": "C", "keyed": "-", "text": "Make a mess of things.", "bias": 0.0, "weights": {"C": -1.0}},
+    {"id": "C09", "factor": "C", "keyed": "-", "text": "Often forget to put things back in their proper place.", "bias": 0.0, "weights": {"C": -1.0}},
+    {"id": "C10", "factor": "C", "keyed": "-", "text": "Shirk my duties.", "bias": 0.0, "weights": {"C": -1.0}},
+
+    {"id": "N01", "factor": "N", "keyed": "-", "text": "Am relaxed most of the time.", "bias": 0.0, "weights": {"N": -1.0}},
+    {"id": "N02", "factor": "N", "keyed": "-", "text": "Seldom feel blue.", "bias": 0.0, "weights": {"N": -1.0}},
+    {"id": "N03", "factor": "N", "keyed": "+", "text": "Get stressed out easily.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N04", "factor": "N", "keyed": "+", "text": "Worry about things.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N05", "factor": "N", "keyed": "+", "text": "Am easily disturbed.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N06", "factor": "N", "keyed": "+", "text": "Get upset easily.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N07", "factor": "N", "keyed": "+", "text": "Change my mood a lot.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N08", "factor": "N", "keyed": "+", "text": "Have frequent mood swings.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N09", "factor": "N", "keyed": "+", "text": "Get irritated easily.", "bias": 0.0, "weights": {"N": 1.0}},
+    {"id": "N10", "factor": "N", "keyed": "+", "text": "Often feel blue.", "bias": 0.0, "weights": {"N": 1.0}},
+
+    {"id": "O01", "factor": "O", "keyed": "+", "text": "Have a rich vocabulary.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O02", "factor": "O", "keyed": "+", "text": "Have a vivid imagination.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O03", "factor": "O", "keyed": "+", "text": "Have excellent ideas.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O04", "factor": "O", "keyed": "+", "text": "Am quick to understand things.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O05", "factor": "O", "keyed": "+", "text": "Use difficult words.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O06", "factor": "O", "keyed": "+", "text": "Spend time reflecting on things.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O07", "factor": "O", "keyed": "+", "text": "Am full of ideas.", "bias": 0.0, "weights": {"O": 1.0}},
+    {"id": "O08", "factor": "O", "keyed": "-", "text": "Have difficulty understanding abstract ideas.", "bias": 0.0, "weights": {"O": -1.0}},
+    {"id": "O09", "factor": "O", "keyed": "-", "text": "Am not interested in abstract ideas.", "bias": 0.0, "weights": {"O": -1.0}},
+    {"id": "O10", "factor": "O", "keyed": "-", "text": "Do not have a good imagination.", "bias": 0.0, "weights": {"O": -1.0}}
+  ]
+}

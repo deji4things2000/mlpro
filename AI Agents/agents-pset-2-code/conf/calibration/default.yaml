@@ -1,0 +1,45 @@
+# These judge calibration parameters are (somewhat) arbitrary assumptions here, just to give you a sense
+# They represent hypothetical estimates from a separate human-labeled calibration study
+# q1 = sensitivity = P(judge=1 | true=1), q0 = specificity = P(judge=0 | true=0)
+# n_calib_pos/n_calib_neg are assumed calibration sample sizes used for CI propagation
+# Bias correction is applied only to judged semi-subjective metrics
+assumption_source: "Hypothetical calibration study used for pedagogy"
+assumption_interpretation: "Bias-corrected judged rates depend on assumed judge sensitivity/specificity"
+
+judged_metrics:
+  judged_fairness:
+    q1: 0.88
+    q0: 0.9
+    n_calib_pos: 100
+    n_calib_neg: 100
+  judged_cooperative_intent:
+    q1: 0.84
+    q0: 0.87
+    n_calib_pos: 100
+    n_calib_neg: 100
+  judged_strategic_constructiveness:
+    q1: 0.82
+    q0: 0.86
+    n_calib_pos: 100
+    n_calib_neg: 100
+  judged_leadership:
+    q1: 0.85
+    q0: 0.88
+    n_calib_pos: 100
+    n_calib_neg: 100
+  judged_toxicity:
+    q1: 0.90
+    q0: 0.92
+    n_calib_pos: 100
+    n_calib_neg: 100
+
+public_goods:
+  q1: 0.88
+  q0: 0.9
+  n_calib_pos: 100
+  n_calib_neg: 100
+negotiation:
+  q1: 0.86
+  q0: 0.89
+  n_calib_pos: 100
+  n_calib_neg: 100

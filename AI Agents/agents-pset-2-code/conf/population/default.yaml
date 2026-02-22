@@ -1,0 +1,5 @@
+n: 100
+seed: 42
+max_parallel_bio_workers: 8
+out_path: data/population.json
+bio_model: gemini/gemini-3-flash-preview

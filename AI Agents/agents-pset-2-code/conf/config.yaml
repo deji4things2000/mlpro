@@ -1,0 +1,14 @@
+defaults:
+  - data: default
+  - agent: llm
+  - simulation: default
+  - analysis: default
+  - calibration: default
+  - output: default
+  - population: default
+  - _self_
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null

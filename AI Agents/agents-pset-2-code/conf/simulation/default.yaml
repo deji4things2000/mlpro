@@ -1,0 +1,27 @@
+seed: 42
+group_size: 4
+max_groups: 0
+max_steps: 50
+context_conditions:
+  - life_story_only
+  - bfi_only
+  - life_story_and_bfi
+parallel:
+  max_parallel_groups: 8
+  max_parallel_agents: 8
+public_goods:
+  num_rounds: 6
+  endowment: 10
+  threshold: 24
+  catastrophe_risk: 0.7
+  success_bonus: 5
+  risk_increase_per_round: 0.03
+  contribution_fatigue_penalty: 0.04
+negotiation:
+  total_resource: 100
+  num_rounds: 4
+  disagreement_penalty: 5.0
+  scarcity_growth_per_round: 0.08
+  disagreement_penalty_growth_per_round: 0.15
+collaboration:
+  num_rounds: 4
