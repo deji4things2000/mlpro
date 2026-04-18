@@ -1,0 +1,7 @@
+*.pt
+*.zip
+*.png
+*.out
+*_models/
+__pycache__/
+.DS_Store
