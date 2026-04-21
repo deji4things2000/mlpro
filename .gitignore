@@ -11,5 +11,12 @@ env/
 wandb/
 .cache/
 
+# PyTorch / Models
+*.pt
+*.zip
+*.png
+*.out
+*_models/
+
 # OS
 .DS_Store
